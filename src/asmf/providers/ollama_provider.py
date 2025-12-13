@@ -38,7 +38,8 @@ class OllamaProvider(BaseAIProvider):
 
         # Test connection
         try:
-            response = httpx.get(f"{self.base_url}/api/tags", timeout=self.timeout)
+            response = httpx.get(
+                f"{self.base_url}/api/tags", timeout=self.timeout)
             self._available = response.status_code == 200
             if self._available:
                 logger.info(

@@ -136,7 +136,7 @@ class PDFPatentParser:
 
     def _extract_title(self, text: str) -> Optional[str]:
         """Extract patent title.
-        
+
         Note: This is a heuristic-based approach that may not work for all patent formats.
         Future improvements could include more sophisticated pattern matching or
         using PDF metadata when available.
