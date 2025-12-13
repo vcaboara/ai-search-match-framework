@@ -1,7 +1,6 @@
 """AI provider factory with fallback support."""
 
 import logging
-from typing import Optional
 
 from .base_provider import BaseAIProvider
 from .gemini_provider import GeminiProvider
@@ -26,17 +25,24 @@ class AIProviderFactory:
         Raises:
             RuntimeError: If no providers are available
         """
-        providers = (
-            [OllamaProvider(), GeminiProvider()]
+        provider_classes = (
+            [OllamaProvider, GeminiProvider]
             if prefer_local
-            else [GeminiProvider(), OllamaProvider()]
+            else [GeminiProvider, OllamaProvider]
         )
 
-        for provider in providers:
-            if provider.is_available():
-                logger.info(
-                    f"Using AI provider: {provider.__class__.__name__}")
-                return provider
+        for provider_cls in provider_classes:
+            try:
+                provider = provider_cls()
+                if provider.is_available():
+                    logger.info(
+                        f"Using AI provider: {provider.__class__.__name__}")
+                    return provider
+            except Exception as e:
+                logger.warning(
+                    f"Failed to instantiate provider {provider_cls.__name__}: {e}"
+                )
+                continue
 
         raise RuntimeError(
             "No AI providers available. "

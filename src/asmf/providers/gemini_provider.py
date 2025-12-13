@@ -26,20 +26,23 @@ class GeminiProvider(BaseAIProvider):
             api_key: Gemini API key (or uses GEMINI_API_KEY env var)
             model: Model name (default: gemini-1.5-pro)
         """
+        super().__init__(api_key=api_key, model=model)
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         self.model = model or "gemini-1.5-pro"
         self._client = None
 
+        if genai is None:
+            logger.error("google-generativeai package not installed")
+            return
+
         if self.api_key:
             try:
-                import google.generativeai as genai
-
                 genai.configure(api_key=self.api_key)
                 self._client = genai.GenerativeModel(self.model)
                 logger.info(
                     f"Gemini provider initialized with model: {self.model}")
             except Exception as e:
-                logger.error(f"Failed to initialize Gemini: {e}")
+                logger.exception(f"Failed to initialize Gemini: {e}")
                 self._client = None
 
     def analyze_text(
@@ -60,19 +63,17 @@ class GeminiProvider(BaseAIProvider):
         if not self.is_available():
             raise RuntimeError("Gemini provider is not available")
 
+        if not prompt or not prompt.strip():
+            raise ValueError("Prompt cannot be empty")
+
         try:
-            # Add context to prompt if provided
-            full_prompt = prompt
-            if context:
-                context_str = "\n\n".join(
-                    f"{k}: {v}" for k, v in context.items()
-                )
-                full_prompt = f"{context_str}\n\n{prompt}"
+            # Use base class helper to format prompt with context
+            full_prompt = self._format_prompt_with_context(prompt, context)
 
             response = self._client.generate_content(full_prompt)
             return response.text
         except Exception as e:
-            logger.error(f"Gemini analysis failed: {e}")
+            logger.exception(f"Gemini analysis failed: {e}")
             raise
 
     def is_available(self) -> bool:

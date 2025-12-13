@@ -135,16 +135,24 @@ class PDFPatentParser:
         return "\n\n".join(text_parts)
 
     def _extract_title(self, text: str) -> Optional[str]:
-        """Extract patent title."""
+        """Extract patent title.
+        
+        Note: This is a heuristic-based approach that may not work for all patent formats.
+        Future improvements could include more sophisticated pattern matching or
+        using PDF metadata when available.
+        """
         # Look for title patterns at start of document
         lines = text.split("\n")[:20]  # Check first 20 lines
         for i, line in enumerate(lines):
             line = line.strip()
             # Title is usually short and before abstract
+            # Skip common header patterns
             if (
                 5 < len(line) < 200
                 and not line.isupper()
                 and not line.startswith("United States Patent")
+                and not line.startswith("US ")
+                and not any(keyword in line.lower() for keyword in ["patent", "publication", "application"])
             ):
                 return line
         return None

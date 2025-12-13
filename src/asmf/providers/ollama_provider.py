@@ -18,6 +18,7 @@ class OllamaProvider(BaseAIProvider):
         api_key: Optional[str] = None,
         model: Optional[str] = None,
         base_url: Optional[str] = None,
+        timeout: Optional[float] = None,
     ):
         """Initialize Ollama provider.
 
@@ -25,16 +26,19 @@ class OllamaProvider(BaseAIProvider):
             api_key: Not used for Ollama
             model: Model name (default: qwen2.5-coder:32b)
             base_url: Ollama base URL (default: http://localhost:11434)
+            timeout: Connection timeout in seconds (default: 5.0, configurable via OLLAMA_TIMEOUT env var)
         """
+        super().__init__(api_key=api_key, model=model, base_url=base_url, timeout=timeout)
         self.base_url = base_url or os.getenv(
             "OLLAMA_BASE_URL", "http://localhost:11434"
         )
         self.model = model or "qwen2.5-coder:32b"
+        self.timeout = timeout or float(os.getenv("OLLAMA_TIMEOUT", "5.0"))
         self._available = False
 
         # Test connection
         try:
-            response = httpx.get(f"{self.base_url}/api/tags", timeout=2.0)
+            response = httpx.get(f"{self.base_url}/api/tags", timeout=self.timeout)
             self._available = response.status_code == 200
             if self._available:
                 logger.info(
@@ -60,14 +64,12 @@ class OllamaProvider(BaseAIProvider):
         if not self.is_available():
             raise RuntimeError("Ollama provider is not available")
 
+        if not prompt or not prompt.strip():
+            raise ValueError("Prompt cannot be empty")
+
         try:
-            # Add context to prompt if provided
-            full_prompt = prompt
-            if context:
-                context_str = "\n\n".join(
-                    f"{k}: {v}" for k, v in context.items()
-                )
-                full_prompt = f"{context_str}\n\n{prompt}"
+            # Use base class helper to format prompt with context
+            full_prompt = self._format_prompt_with_context(prompt, context)
 
             response = httpx.post(
                 f"{self.base_url}/api/generate",
@@ -78,7 +80,7 @@ class OllamaProvider(BaseAIProvider):
             response.raise_for_status()
             return response.json()["response"]
         except Exception as e:
-            logger.error(f"Ollama analysis failed: {e}")
+            logger.exception(f"Ollama analysis failed: {e}")
             raise
 
     def is_available(self) -> bool:

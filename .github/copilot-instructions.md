@@ -29,7 +29,7 @@ This is a reusable Python framework for building AI-powered search and analysis 
 
 ## Technology Stack
 
-- **Python**: 3.12+
+- **Python**: 3.10+
 - **AI**: google-generativeai (Gemini), httpx (Ollama)
 - **PDF**: pypdf, pdfplumber
 - **Data**: pydantic for models

@@ -7,9 +7,12 @@ from typing import Optional, Dict, Any
 class BaseAIProvider(ABC):
     """Base class for AI providers (Gemini, Ollama)."""
 
-    @abstractmethod
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
-        """Initialize the provider."""
+    def __init__(self, **kwargs):
+        """Initialize the provider.
+        
+        Args:
+            **kwargs: Provider-specific configuration options
+        """
         pass
 
     @abstractmethod
@@ -35,3 +38,23 @@ class BaseAIProvider(ABC):
             True if provider can be used, False otherwise
         """
         pass
+
+    def _format_prompt_with_context(
+        self, prompt: str, context: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Format prompt with context dictionary.
+
+        Args:
+            prompt: The base prompt text
+            context: Optional context dictionary to prepend
+
+        Returns:
+            Formatted prompt string with context prepended
+        """
+        if not context:
+            return prompt
+            
+        context_str = "\n\n".join(
+            f"{k}: {v}" for k, v in context.items()
+        )
+        return f"{context_str}\n\n{prompt}"
