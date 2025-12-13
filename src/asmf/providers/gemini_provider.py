@@ -4,6 +4,11 @@ import os
 from typing import Optional, Dict, Any
 import logging
 
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+
 from .base_provider import BaseAIProvider
 
 logger = logging.getLogger(__name__)
