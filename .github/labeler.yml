@@ -2,30 +2,33 @@
 # See https://github.com/actions/labeler
 
 'component:provider':
-  - src/asmf/providers/**/*
+  - changed-files:
+    - any-glob-to-any-file: 'src/asmf/providers/**/*'
 
 'component:parser':
-  - src/asmf/parsers/**/*
+  - changed-files:
+    - any-glob-to-any-file: 'src/asmf/parsers/**/*'
 
 'component:analyzer':
-  - src/asmf/analyzers/**/*
+  - changed-files:
+    - any-glob-to-any-file: 'src/asmf/analyzers/**/*'
 
 'component:utils':
-  - src/asmf/utils/**/*
+  - changed-files:
+    - any-glob-to-any-file: 'src/asmf/utils/**/*'
 
 'documentation':
-  - '**/*.md'
-  - docs/**/*
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.md', 'docs/**/*']
 
 'testing':
-  - tests/**/*
-  - '**/*test*.py'
+  - changed-files:
+    - any-glob-to-any-file: ['tests/**/*', '**/*test*.py']
 
 'ci':
-  - .github/workflows/**/*
-  - .github/**/*.yml
-  - Dockerfile
+  - changed-files:
+    - any-glob-to-any-file: ['.github/workflows/**/*', '.github/**/*.yml', 'Dockerfile']
 
 'dependencies':
-  - pyproject.toml
-  - requirements*.txt
+  - changed-files:
+    - any-glob-to-any-file: ['pyproject.toml', 'requirements*.txt']
