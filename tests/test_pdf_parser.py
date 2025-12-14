@@ -18,32 +18,37 @@ class TestPDFPatentParserExistingBehavior(unittest.TestCase):
         """Set up the parser and mock patent text for each test."""
         self.parser = PDFPatentParser()
         self.full_patent_text = """
-        A METHOD FOR PROCESSING DATA
+United States Patent Application Publication
 
-        ABSTRACT
-        An abstract describing a novel method for processing data streams efficiently.
-        It involves several key steps.
+A METHOD FOR PROCESSING DATA
 
-        BACKGROUND
-        Some background info.
+ABSTRACT
+An abstract describing a novel method for processing data streams efficiently.
+It involves several key steps.
 
-        CLAIMS
-        1. A method, comprising:
-        receiving a data stream; and
-        processing the data stream.
+BACKGROUND
+Some background info about the technical field.
 
-        2. The method of claim 1, further comprising:
-        transmitting the processed data stream.
-        """
+CLAIMS
+1. A method, comprising:
+receiving a data stream; and
+processing the data stream.
+
+2. The method of claim 1, further comprising:
+transmitting the processed data stream.
+"""
         self.no_claims_patent_text = """
-        A SYSTEM WITH NO CLAIMS
+United States Patent Application Publication
 
-        ABSTRACT
-        An abstract for a system that has no claims section in the document.
-        """
+A SYSTEM WITH NO CLAIMS
 
+ABSTRACT
+An abstract for a system that has no claims section in the document.
+"""
+
+    @patch("pathlib.Path.exists", return_value=True)
     @patch("asmf.parsers.pdf_parser.PDFPatentParser._extract_text")
-    def test_parse_full_patent_successfully(self, mock_extract_text: MagicMock):
+    def test_parse_full_patent_successfully(self, mock_extract_text: MagicMock, mock_exists: MagicMock):
         """
         Verify that a patent with all sections is parsed correctly.
         """
@@ -56,8 +61,9 @@ class TestPDFPatentParserExistingBehavior(unittest.TestCase):
         self.assertIn("novel method for processing data", doc.abstract)
         self.assertEqual(len(doc.claims), 2)
 
+    @patch("pathlib.Path.exists", return_value=True)
     @patch("asmf.parsers.pdf_parser.PDFPatentParser._extract_text")
-    def test_correctly_identifies_claim_types(self, mock_extract_text: MagicMock):
+    def test_correctly_identifies_claim_types(self, mock_extract_text: MagicMock, mock_exists: MagicMock):
         """
         Verify that independent and dependent claims are identified correctly.
         """
@@ -77,8 +83,9 @@ class TestPDFPatentParserExistingBehavior(unittest.TestCase):
         self.assertEqual(dependent_claims[0].claim_type, "dependent")
         self.assertEqual(dependent_claims[0].depends_on, [1])
 
+    @patch("pathlib.Path.exists", return_value=True)
     @patch("asmf.parsers.pdf_parser.PDFPatentParser._extract_text")
-    def test_parse_patent_without_claims_returns_empty_list(self, mock_extract_text: MagicMock):
+    def test_parse_patent_without_claims_returns_empty_list(self, mock_extract_text: MagicMock, mock_exists: MagicMock):
         """
         Verify the NEW behavior that parsing a patent without a claims section
         returns an empty list for claims instead of raising an error.
