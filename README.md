@@ -1,137 +1,130 @@
-# AI Search Match Framework
+# AI Search Match Framework (ASMF)
 
-A reusable framework for AI-assisted development with automated search, filtering, and quality control for job leads, content aggregation, or any search-match-evaluate workflow.
+**Lightweight Python framework for building AI-powered search and analysis applications.**
 
-## Overview
+ASMF provides clean abstractions for common AI workflows: document parsing, AI provider management with automatic fallback, and extensible analysis patterns. Perfect for building domain-specific tools like patent analyzers, grant finders, or contract review systems.
 
-This framework implements a pattern for:
-1. **Automated Search** - Query multiple data sources (APIs, MCPs, web scraping)
-2. **Intelligent Filtering** - AI-powered relevance scoring and deduplication
-3. **Quality Control** - Block lists, validation, and iterative refinement
-4. **Progress Tracking** - Status management and audit trails
+## Why ASMF?
 
-Originally built for job lead discovery but designed to be generalized for any AI development loop requiring search-match-evaluate cycles.
+**The problem:** Building AI apps requires boilerplate for provider management, document parsing, and analysis patterns.
 
-## Architecture
+**The solution:** ASMF gives you:
+- 🤖 **Multi-provider AI** - Gemini + Ollama with automatic fallback
+- 📄 **Document parsing** - PDF extraction with domain-specific parsers
+- 🔧 **Extensible analyzers** - Base classes for custom analysis logic
+- 🎯 **Type-safe** - Full type hints for IDE support
+- ✅ **Well-tested** - 80%+ coverage, production-ready
 
+**Not a general LLM framework** - LangChain and LlamaIndex are better for RAG/chatbots. ASMF is for **linear search-analyze-evaluate workflows**.
+
+## Quick Start
+
+```bash
+pip install ai-search-match-framework
 ```
-┌─────────────────┐
-│   Data Sources  │ (APIs, MCPs, Web Scrapers)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   Aggregator    │ (Multi-source coordination)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   AI Evaluator  │ (Scoring, filtering, ranking)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   Tracker       │ (Status, dedup, persistence)
-└─────────────────┘
+
+```python
+from asmf.providers import AIProviderFactory
+from asmf.parsers import PDFPatentParser
+from asmf.analyzers import BaseAnalyzer
+
+# 1. AI Provider with automatic fallback
+provider = AIProviderFactory.create_provider()  # Tries Gemini → Ollama
+response = provider.analyze_text("Analyze this patent abstract...")
+
+# 2. Document parsing
+parser = PDFPatentParser()
+patent = parser.parse("patent.pdf")
+print(f"Claims: {len(patent.claims)}")
+
+# 3. Custom analyzer
+class PatentAnalyzer(BaseAnalyzer):
+    def analyze(self, patent_text):
+        prompt = f"Rate innovation: {patent_text}"
+        return {"score": self.provider.analyze_text(prompt)}
+
+analyzer = PatentAnalyzer(provider)
+results = analyzer.batch_analyze([doc1, doc2, doc3])
 ```
 
 ## Core Components
 
-### 1. Provider Pattern
-- **Base Provider Interface** - Standard interface for all data sources
-- **MCP Integration** - Model Context Protocol support
-- **API Adapters** - REST API wrappers
-- **Web Scrapers** - HTML/RSS/XML parsers
+### **AI Providers** (`asmf.providers`)
+Unified interface for AI models with automatic fallback:
+- `GeminiProvider` - Google Gemini API
+- `OllamaProvider` - Local Ollama
+- `AIProviderFactory` - Automatic selection (Gemini → Ollama)
 
-### 2. AI Evaluation
-- **Multi-Provider Support** - OpenAI, Anthropic, Gemini, Ollama, DeepSeek
-- **Batch Processing** - Efficient scoring of multiple items
-- **Fallback Chain** - Automatic provider failover
-- **Custom Prompts** - Configurable evaluation criteria
-
-### 3. Filtering & Validation
-- **Block Lists** - Domain, company, keyword filters
-- **Deduplication** - Hash-based and fuzzy matching
-- **Link Validation** - HTTP checks with caching
-- **Quality Thresholds** - Configurable acceptance criteria
-
-### 4. State Management
-- **JSON Persistence** - Simple file-based storage
-- **Status Tracking** - Multi-state workflow (new, in-progress, applied, etc.)
-- **History** - Timestamp and audit trail
-- **Export** - Multiple format support
-
-## Key Files
-
-### Configuration
-- `.github/copilot-instructions.md` - AI assistant guidelines
-- `.github/GEMINI.md` - Gemini-specific instructions
-- `config.json` - User preferences, block lists, system instructions
-- `pyproject.toml` - Dependencies and project metadata
-
-### Core Logic
-- `src/app/job_finder.py` - Main search orchestration
-- `src/app/job_tracker.py` - Status and persistence
-- `src/app/mcp_providers.py` - MCP integration
-- `src/app/ollama_provider.py` - Local AI evaluation
-- `src/app/gemini_provider.py` - Gemini API integration
-
-### Utilities
-- `tools/llm_api.py` - Multi-provider LLM interface
-- `tools/search_engine.py` - Web search integration
-- `tools/web_scraper.py` - HTML content extraction
-- `tools/screenshot_utils.py` - Visual verification
-
-### UI
-- `src/app/ui_server.py` - Flask REST API
-- `src/app/templates/index.html` - Web interface
-
-## Usage Patterns
-
-### 1. Search Orchestration
 ```python
-from app.job_finder import generate_job_leads
-
-results = generate_job_leads(
-    resume_text="...",
-    count=10,
-    model="gpt-4o",
-    location="United States"
-)
+# Prefer local-first
+provider = AIProviderFactory.create_provider(prefer_local=True)
 ```
 
-### 2. AI Evaluation
-```python
-from app.ollama_provider import OllamaProvider
+### **Document Parsers** (`asmf.parsers`)
+Extract structured data from documents:
+- `PDFPatentParser` - Patent claims, abstracts, metadata
+- Extensible for custom formats
 
-provider = OllamaProvider()
-scores = provider.rank_items(items, criteria="...")
+```python
+parExamples
+
+**Patent Analysis:**
+```python
+from asmf.parsers import PDFPatentParser
+from asmf.providers import GeminiProvider
+
+parser = PDFPatentParser()
+provider = GeminiProvider(api_key="...")
+
+patent = parser.parse("us_patent.pdf")
+for claim in patent.get_independent_claims():
+    analysis = provider.analyze_text(
+        f"Evaluate novelty: {claim.text}",
+        context={"title": patent.title}
+    )
+    print(analysis)
 ```
 
-### 3. Status Tracking
+**Grant Matching:**
 ```python
-from app.job_tracker import get_tracker
+from asmf.analyzers import BaseAnalyzer
 
-tracker = get_tracker()
-tracker.track_job(job_data)
-tracker.update_status(job_id, "applied")
+class GrantMatcher(BaseAnalyzer):
+    def __init__(self, provider, profile):
+        super().__init__(provider)
+        self.profile = profile
+    
+    def analyze(self, grant_text):
+        prompt = f"Match grant to profile:\nGrant: {grant_text}\nProfile: {self.profile}"
+        score = self.provider.analyze_text(prompt)
+        return {"score": score, "grant": grant_text}
+
+matcher = GrantMatcher(provider, profile="biotech research")
+matches = matcher.batch_analyze(grant_descriptions)
 ```
 
-### 4. Multi-Provider Aggregation
-```python
-from app.mcp_providers import MCPAggregator
+See `examples/job_finder/` for a complete application demonstrating multi-source aggregation and tracking.
 
-aggregator = MCPAggregator()
-results = aggregator.search_jobs("python developer", count=30)
+## Configuration
+
+**Environment Variables:**
+```bash
+GEMINI_API_KEY=your_key_here
+OLLAMA_BASE_URL=http://localhost:11434  # optional
+OLLAMA_TIMEOUT=5.0  # optional
 ```
 
-## Configuration System
+**Provider Selection:**
+```python
+# Default: Gemini first, then Ollama
+provider = AIProviderFactory.create_provider()
 
-### Block Lists
-```json
-{
-  "blocked_entities": [
-    {"type": "site", "value": "example.com"},
+# Local-first
+provider = AIProviderFactory.create_provider(prefer_local=True)
+
+# Specific provider
+provider = GeminiProvider(api_key="...", model="gemini-1.5-pro")
+provider = OllamaProvider(model="qwen2.5-coder:32b")te", "value": "example.com"},
     {"type": "employer", "value": "Bad Company"}
   ]
 }
