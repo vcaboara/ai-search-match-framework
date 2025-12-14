@@ -1,0 +1,98 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write  # Required for trusted publishing
+
+jobs:
+  test-before-publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get version from pyproject.toml
+        id: get-version
+        run: |
+          VERSION=$(grep "^version" pyproject.toml | cut -d'"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+      
+      - name: Verify version matches tag
+        run: |
+          TAG_VERSION="${{ github.event.release.tag_name }}"
+          TAG_VERSION="${TAG_VERSION#v}"  # Remove 'v' prefix
+          if [ "${{ steps.get-version.outputs.version }}" != "$TAG_VERSION" ]; then
+            echo "Version mismatch: pyproject.toml=${{ steps.get-version.outputs.version }}, tag=$TAG_VERSION"
+            exit 1
+          fi
+      
+      - name: Build Docker image with test deps
+        run: |
+          docker build \
+            --pull \
+            --tag asmf-ci:${{ steps.get-version.outputs.version }} \
+            --build-arg INSTALL_TEST_DEPS=true \
+            .
+      
+      - name: Run full test suite
+        run: |
+          docker run --rm \
+            -v $(pwd):/workspace/output \
+            asmf-ci:${{ steps.get-version.outputs.version }} \
+            pytest -n auto --cov=src/asmf --cov-report=xml:output/coverage.xml --cov-report=term
+
+  build:
+    needs: test-before-publish
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install build dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="/root/.local/bin:$PATH"
+          uv pip install --system build twine
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Check package contents
+        run: |
+          twine check dist/*
+          tar -tzf dist/*.tar.gz | head -20
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/ai-search-match-framework
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true

@@ -141,7 +141,8 @@ class PDFPatentParser:
         using PDF metadata when available.
         """
         lines = [l.strip() for l in text.split("\n") if l.strip()]
-        section_headers = {"ABSTRACT", "BACKGROUND", "CLAIMS", "FIELD", "SUMMARY", "DESCRIPTION"}
+        section_headers = {"ABSTRACT", "BACKGROUND",
+                           "CLAIMS", "FIELD", "SUMMARY", "DESCRIPTION"}
         skip_keywords = ["patent application", "publication"]
 
         def is_section_header(line: str) -> bool:

@@ -199,30 +199,42 @@ uv run pytest tests/test_job_finder.py
 
 ## Security
 
-- No PII in repository
-- API keys via environment variables
+- No PII in repository (automated scans)
+- API keys via environment variables only
 - Input validation and sanitization
 - Rate limiting on external APIs
 - CORS protection on web endpoints
+- Trusted PyPI publishing (no API tokens)
+- Weekly vulnerability scans
+
+## Publishing
+
+This framework is published to PyPI with automated workflows:
+- **Auto-tagging**: Merges to `main` create version tags
+- **Auto-publishing**: GitHub Releases trigger PyPI uploads
+- **Pre-publish tests**: Full test suite runs before publishing
+
+See [docs/PUBLISHING.md](docs/PUBLISHING.md) for details.
 
 ## Documentation
 
-- `docs/` - Technical documentation
-- `memory/docs/` - Project context and architecture
-- `memory/tasks/` - Task planning and status
-- `.github/` - AI assistant instructions
+- [docs/PUBLISHING.md](docs/PUBLISHING.md) - Release process
+- [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) - Pre-release checklist
+- [docs/CONFIGURATION.md](docs/CONFIGURATION.md) - Configuration guide
+- [docs/PATTERNS.md](docs/PATTERNS.md) - Usage patterns
+- `.github/copilot-instructions.md` - Development guidelines
 
 ## License
 
-[Specify your license]
+MIT License - See LICENSE file for details
 
 ## Contributing
 
 1. Follow `.github/copilot-instructions.md` guidelines
-2. Use feature branches
-3. Include tests for new features
-4. Update documentation
-5. Add AI attribution in commits
+2. Use feature branches with descriptive names
+3. Include tests for new features (maintain 75%+ coverage)
+4. Update documentation for API changes
+5. Run pre-commit checks before pushing
 
 ## Credits
 
