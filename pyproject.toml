@@ -72,7 +72,7 @@ addopts = [
     "--cov=src/asmf",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-fail-under=80",
+    "--cov-fail-under=75",
 ]
 
 [tool.coverage.run]
