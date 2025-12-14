@@ -24,6 +24,7 @@ jobs:
           echo "Building version: $VERSION"
       
       - name: Verify version matches tag
+        if: github.event_name == 'release'
         run: |
           TAG_VERSION="${{ github.event.release.tag_name }}"
           TAG_VERSION="${TAG_VERSION#v}"  # Remove 'v' prefix
