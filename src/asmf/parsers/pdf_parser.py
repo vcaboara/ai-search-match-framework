@@ -140,23 +140,30 @@ class PDFPatentParser:
         Future improvements could include more sophisticated pattern matching or
         using PDF metadata when available.
         """
-        # Look for title patterns at start of document  
         lines = [l.strip() for l in text.split("\n") if l.strip()]
         section_headers = {"ABSTRACT", "BACKGROUND", "CLAIMS", "FIELD", "SUMMARY", "DESCRIPTION"}
-        
-        for i, line in enumerate(lines[:30]):
-            # Stop at section headers
-            if line.upper() in section_headers:
+        skip_keywords = ["patent application", "publication"]
+
+        def is_section_header(line: str) -> bool:
+            return line.upper() in section_headers
+
+        def is_patent_header(line: str) -> bool:
+            return "United States" in line or line.startswith("US")
+
+        def has_skip_keywords(line: str) -> bool:
+            return any(kw in line.lower() for kw in skip_keywords)
+
+        def is_valid_title(line: str) -> bool:
+            return line.isupper() and 10 <= len(line) <= 200
+
+        for line in lines[:30]:
+            if is_section_header(line):
                 break
-            # Skip US patent headers
-            if "United States" in line or line.startswith("US"):
+            if is_patent_header(line) or has_skip_keywords(line):
                 continue
-            # Skip lines with common header keywords  
-            if any(kw in line.lower() for kw in ["patent application", "publication"]):
-                continue
-            # Title is typically all caps, 10-200 chars
-            if line.isupper() and 10 <= len(line) <= 200:
+            if is_valid_title(line):
                 return line
+
         return None
 
     def _extract_abstract(self, text: str) -> Optional[str]:
