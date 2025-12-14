@@ -10,19 +10,19 @@ permissions:
 jobs:
   tag-and-release:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Get version from pyproject.toml
         id: get-version
         run: |
           VERSION=$(grep "^version" pyproject.toml | cut -d'"' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
-      
+
       - name: Check if tag exists
         id: check-tag
         run: |
@@ -31,7 +31,7 @@ jobs:
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Create and push tag
         if: steps.check-tag.outputs.exists == 'false'
         run: |
@@ -39,7 +39,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "v${{ steps.get-version.outputs.version }}" -m "Release v${{ steps.get-version.outputs.version }}"
           git push origin "v${{ steps.get-version.outputs.version }}"
-      
+
       - name: Create GitHub Release
         if: steps.check-tag.outputs.exists == 'false'
         env:

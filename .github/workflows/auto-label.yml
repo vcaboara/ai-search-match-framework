@@ -1,0 +1,61 @@
+name: Auto Label
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - uses: actions/labeler@v5
+        if: github.event_name == 'pull_request'
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+      
+      - name: Label issues by content
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const title = issue.title || '';
+            const content = (title + ' ' + body).toLowerCase();
+            
+            const labels = [];
+            
+            // Provider-related
+            if (content.includes('gemini') || content.includes('google')) labels.push('provider:gemini');
+            if (content.includes('ollama')) labels.push('provider:ollama');
+            
+            // Component-related
+            if (content.includes('parser') || content.includes('pdf')) labels.push('component:parser');
+            if (content.includes('analyzer')) labels.push('component:analyzer');
+            if (content.includes('provider')) labels.push('component:provider');
+            
+            // Priority
+            if (content.includes('urgent') || content.includes('critical')) labels.push('priority:high');
+            if (content.includes('security') || content.includes('vulnerability')) labels.push('priority:critical');
+            
+            // Type
+            if (content.includes('documentation') || content.includes('docs')) labels.push('documentation');
+            if (content.includes('test') || content.includes('coverage')) labels.push('testing');
+            if (content.includes('performance') || content.includes('slow')) labels.push('performance');
+            
+            if (labels.length > 0) {
+              github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labels
+              });
+            }

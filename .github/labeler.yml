@@ -1,0 +1,31 @@
+# Pull request labeler configuration
+# See https://github.com/actions/labeler
+
+'component:provider':
+  - src/asmf/providers/**/*
+
+'component:parser':
+  - src/asmf/parsers/**/*
+
+'component:analyzer':
+  - src/asmf/analyzers/**/*
+
+'component:utils':
+  - src/asmf/utils/**/*
+
+'documentation':
+  - '**/*.md'
+  - docs/**/*
+
+'testing':
+  - tests/**/*
+  - '**/*test*.py'
+
+'ci':
+  - .github/workflows/**/*
+  - .github/**/*.yml
+  - Dockerfile
+
+'dependencies':
+  - pyproject.toml
+  - requirements*.txt
