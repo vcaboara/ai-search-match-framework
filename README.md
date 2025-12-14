@@ -1,21 +1,8 @@
 # AI Search Match Framework (ASMF)
 
-**Lightweight Python framework for building AI-powered search and analysis applications.**
+**Lightweight Python framework for building AI-powered document analysis applications.**
 
-ASMF provides clean abstractions for common AI workflows: document parsing, AI provider management with automatic fallback, and extensible analysis patterns. Perfect for building domain-specific tools like patent analyzers, grant finders, or contract review systems.
-
-## Why ASMF?
-
-**The problem:** Building AI apps requires boilerplate for provider management, document parsing, and analysis patterns.
-
-**The solution:** ASMF gives you:
-- 🤖 **Multi-provider AI** - Gemini + Ollama with automatic fallback
-- 📄 **Document parsing** - PDF extraction with domain-specific parsers
-- 🔧 **Extensible analyzers** - Base classes for custom analysis logic
-- 🎯 **Type-safe** - Full type hints for IDE support
-- ✅ **Well-tested** - 80%+ coverage, production-ready
-
-**Not a general LLM framework** - LangChain and LlamaIndex are better for RAG/chatbots. ASMF is for **linear search-analyze-evaluate workflows**.
+Clean abstractions for AI providers, document parsing, and custom analyzers. Build domain-specific tools like patent analyzers, grant finders, or contract reviewers.
 
 ## Quick Start
 
@@ -28,217 +15,98 @@ from asmf.providers import AIProviderFactory
 from asmf.parsers import PDFPatentParser
 from asmf.analyzers import BaseAnalyzer
 
-# 1. AI Provider with automatic fallback
-provider = AIProviderFactory.create_provider()  # Tries Gemini → Ollama
-response = provider.analyze_text("Analyze this patent abstract...")
+# AI Provider with automatic fallback (Gemini → Ollama)
+provider = AIProviderFactory.create_provider()
+response = provider.analyze_text("Analyze this document...")
 
-# 2. Document parsing
+# Parse documents
 parser = PDFPatentParser()
-patent = parser.parse("patent.pdf")
-print(f"Claims: {len(patent.claims)}")
+doc = parser.parse("document.pdf")
 
-# 3. Custom analyzer
-class PatentAnalyzer(BaseAnalyzer):
-    def analyze(self, patent_text):
-        prompt = f"Rate innovation: {patent_text}"
-        return {"score": self.provider.analyze_text(prompt)}
+# Create custom analyzer
+class MyAnalyzer(BaseAnalyzer):
+    def analyze(self, data):
+        return self.provider.analyze_text(f"Evaluate: {data}")
 
-analyzer = PatentAnalyzer(provider)
-results = analyzer.batch_analyze([doc1, doc2, doc3])
+analyzer = MyAnalyzer(provider)
+results = analyzer.batch_analyze([doc1, doc2])
 ```
+
+## Features
+
+- 🤖 **Multi-provider AI** - Unified interface for Gemini, Ollama with automatic fallback
+- 📄 **Document parsing** - Extract structured data from PDFs and other formats
+- 🔧 **Extensible analyzers** - Base classes for custom domain logic
+- 🎯 **Type-safe** - Full type hints for excellent IDE support
+- ✅ **Well-tested** - 78%+ coverage, production-ready
+- 🐳 **Docker support** - Containerized testing and deployment
 
 ## Core Components
 
-### **AI Providers** (`asmf.providers`)
-Unified interface for AI models with automatic fallback:
-- `GeminiProvider` - Google Gemini API
-- `OllamaProvider` - Local Ollama
-- `AIProviderFactory` - Automatic selection (Gemini → Ollama)
-
-```python
-# Prefer local-first
-provider = AIProviderFactory.create_provider(prefer_local=True)
-```
-
-### **Document Parsers** (`asmf.parsers`)
-Extract structured data from documents:
-- `PDFPatentParser` - Patent claims, abstracts, metadata
-- Extensible for custom formats
-
-```python
-parExamples
-
-**Patent Analysis:**
-```python
-from asmf.parsers import PDFPatentParser
-from asmf.providers import GeminiProvider
-
-parser = PDFPatentParser()
-provider = GeminiProvider(api_key="...")
-
-patent = parser.parse("us_patent.pdf")
-for claim in patent.get_independent_claims():
-    analysis = provider.analyze_text(
-        f"Evaluate novelty: {claim.text}",
-        context={"title": patent.title}
-    )
-    print(analysis)
-```
-
-**Grant Matching:**
-```python
-from asmf.analyzers import BaseAnalyzer
-
-class GrantMatcher(BaseAnalyzer):
-    def __init__(self, provider, profile):
-        super().__init__(provider)
-        self.profile = profile
-    
-    def analyze(self, grant_text):
-        prompt = f"Match grant to profile:\nGrant: {grant_text}\nProfile: {self.profile}"
-        score = self.provider.analyze_text(prompt)
-        return {"score": score, "grant": grant_text}
-
-matcher = GrantMatcher(provider, profile="biotech research")
-matches = matcher.batch_analyze(grant_descriptions)
-```
-
-See `examples/job_finder/` for a complete application demonstrating multi-source aggregation and tracking.
+| Component | Purpose |
+|-----------|---------|
+| `providers` | AI provider interface (Gemini, Ollama) with failover |
+| `parsers` | Document parsing (PDF, etc.) with structured output |
+| `analyzers` | Base classes for domain-specific analysis logic |
+| `utils` | Configuration, logging, common utilities |
 
 ## Configuration
 
-**Environment Variables:**
+Set environment variables:
 ```bash
 GEMINI_API_KEY=your_key_here
 OLLAMA_BASE_URL=http://localhost:11434  # optional
-OLLAMA_TIMEOUT=5.0  # optional
 ```
 
-**Provider Selection:**
+Or configure in code:
 ```python
-# Default: Gemini first, then Ollama
-provider = AIProviderFactory.create_provider()
-
-# Local-first
-provider = AIProviderFactory.create_provider(prefer_local=True)
-
-# Specific provider
 provider = GeminiProvider(api_key="...", model="gemini-1.5-pro")
-provider = OllamaProvider(model="qwen2.5-coder:32b")te", "value": "example.com"},
-    {"type": "employer", "value": "Bad Company"}
-  ]
-}
+provider = OllamaProvider(model="llama2")
 ```
 
-### System Instructions
-```json
-{
-  "system_instructions": "You are evaluating job leads for..."
-}
-```
+## Use Cases
 
-### Provider Settings
-```json
-{
-  "providers": {
-    "linkedin": {"enabled": true, "max_results": 50},
-    "indeed": {"enabled": true, "max_results": 50}
-  }
-}
-```
+**Not a general LLM framework** - Use LangChain/LlamaIndex for RAG/chatbots.  
+ASMF is for **linear document analysis workflows**:
 
-## Extensibility
+- ✅ Patent analysis and prior art search
+- ✅ Grant/RFP matching and evaluation
+- ✅ Contract review and risk assessment
+- ✅ Resume screening and candidate matching
+- ✅ Research paper analysis and summarization
 
-### Adding New Data Sources
-1. Implement `BaseProvider` interface
-2. Add to `providers/` directory
-3. Register in aggregator
+## Examples
 
-### Adding New AI Providers
-1. Implement standard interface (rank_items, evaluate)
-2. Add to provider chain with fallback
-3. Configure in environment
-
-### Custom Evaluation Criteria
-1. Update system instructions
-2. Modify scoring prompts
-3. Adjust threshold values
-
-## Testing
-
-Comprehensive test suite with:
-- Unit tests for all components
-- Integration tests for workflows
-- Slow tests marked separately
-- Fixtures for common test data
-
-```bash
-# Run fast tests
-uv run pytest -m "not slow"
-
-# Run all tests
-uv run pytest
-
-# Run specific component
-uv run pytest tests/test_job_finder.py
-```
-
-## Workflows
-
-### GitHub Actions
-- **CI/CD** - Automated testing and validation
-- **Version Bump** - Automatic versioning on merge
-- **Auto-Revert** - Rollback on CI failure
-- **Branch Protection** - Enforce PR workflow
-
-### Pre-commit Hooks
-- Code formatting (black, isort)
-- Linting (flake8)
-- Security checks
-- Test execution
-
-## Security
-
-- No PII in repository (automated scans)
-- API keys via environment variables only
-- Input validation and sanitization
-- Rate limiting on external APIs
-- CORS protection on web endpoints
-- Trusted PyPI publishing (no API tokens)
-- Weekly vulnerability scans
-
-## Publishing
-
-This framework is published to PyPI with automated workflows:
-- **Auto-tagging**: Merges to `main` create version tags
-- **Auto-publishing**: GitHub Releases trigger PyPI uploads
-- **Pre-publish tests**: Full test suite runs before publishing
-
-See [docs/PUBLISHING.md](docs/PUBLISHING.md) for details.
+See [examples/job_finder/](https://github.com/vcaboara/ai-search-match-framework/tree/main/examples/job_finder) for a complete application.
 
 ## Documentation
 
-- [docs/PUBLISHING.md](docs/PUBLISHING.md) - Release process
-- [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) - Pre-release checklist
-- [docs/CONFIGURATION.md](docs/CONFIGURATION.md) - Configuration guide
-- [docs/PATTERNS.md](docs/PATTERNS.md) - Usage patterns
-- `.github/copilot-instructions.md` - Development guidelines
+- **[Full Documentation](https://github.com/vcaboara/ai-search-match-framework#readme)** - Complete guide
+- **[API Reference](https://github.com/vcaboara/ai-search-match-framework/tree/main/docs)** - Detailed docs
+- **[Configuration](https://github.com/vcaboara/ai-search-match-framework/blob/main/docs/CONFIGURATION.md)** - Setup guide
+- **[Usage Patterns](https://github.com/vcaboara/ai-search-match-framework/blob/main/docs/PATTERNS.md)** - Best practices
+
+## Requirements
+
+- Python 3.10+
+- Dependencies: `requests`, `beautifulsoup4`, `google-generativeai`, `httpx`, `pypdf`, `pdfplumber`
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - See [LICENSE](https://github.com/vcaboara/ai-search-match-framework/blob/main/LICENSE)
 
 ## Contributing
 
-1. Follow `.github/copilot-instructions.md` guidelines
-2. Use feature branches with descriptive names
-3. Include tests for new features (maintain 75%+ coverage)
-4. Update documentation for API changes
-5. Run pre-commit checks before pushing
+Contributions welcome! See [Contributing Guide](https://github.com/vcaboara/ai-search-match-framework/blob/main/.github/pull_request_template.md).
 
-## Credits
+---
 
-Built with AI assistance using:
-- GitHub Copilot (Claude Sonnet 4.5)
-- Gemini 2.5 Flash
-- Ollama (local models)
+**Why ASMF vs others?**
+
+| Framework | Focus | Best For |
+|-----------|-------|----------|
+| **ASMF** | Linear document analysis | Domain-specific evaluation tools |
+| LangChain | RAG, agents, chains | Chatbots, conversational AI |
+| LlamaIndex | Data indexing, retrieval | Knowledge base search |
+
+Built with ❤️ using AI assistance (GitHub Copilot, Gemini, Ollama)
