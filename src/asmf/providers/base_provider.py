@@ -9,7 +9,7 @@ class BaseAIProvider(ABC):
 
     def __init__(self, **kwargs):
         """Initialize the provider.
-        
+
         Args:
             **kwargs: Provider-specific configuration options
         """
@@ -53,7 +53,7 @@ class BaseAIProvider(ABC):
         """
         if not context:
             return prompt
-            
+
         context_str = "\n\n".join(
             f"{k}: {v}" for k, v in context.items()
         )
