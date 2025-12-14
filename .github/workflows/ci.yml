@@ -2,51 +2,48 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-
+    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev]"
-    
-    - name: Lint with flake8
-      run: |
-        flake8 src/asmf tests --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 src/asmf tests --count --max-complexity=10 --max-line-length=100 --statistics
-    
-    - name: Format check with black
-      run: black --check src/asmf tests
-    
-    - name: Import sort check with isort
-      run: isort --check-only src/asmf tests
-    
-    - name: Type check with mypy
-      run: mypy src/asmf --strict
-      continue-on-error: true  # TODO: Remove once all type issues fixed
-    
-    - name: Run tests with coverage
-      run: pytest --cov=src/asmf --cov-report=xml --cov-report=term-missing
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      if: matrix.python-version == '3.12'
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get version from pyproject.toml
+        id: get-version
+        run: |
+          VERSION=$(grep "^version" pyproject.toml | cut -d'"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+      
+      - name: Build Docker image with test deps
+        run: |
+          docker build \
+            --pull \
+            --tag asmf-ci:${{ steps.get-version.outputs.version }} \
+            --tag asmf-ci:latest \
+            --build-arg INSTALL_TEST_DEPS=true \
+            .
+      
+      - name: Run tests with coverage
+        run: |
+          docker run --rm \
+            -v $(pwd)/coverage.xml:/workspace/coverage.xml \
+            asmf-ci:latest pytest -n auto --cov=src/asmf --cov-report=xml:/workspace/coverage.xml --cov-report=term
+      
+      - name: Verify coverage file
+        run: ls -la coverage.xml
+      
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: warn
