@@ -2,11 +2,16 @@ FROM python:3.12-slim
 
 WORKDIR /workspace
 
-# Install system dependencies
+# Install system dependencies and uv
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    && rm -rf /var/lib/apt/lists/* && \
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Add uv to PATH
+ENV PATH="/root/.cargo/bin:$PATH"
 
 # Copy project files
 COPY pyproject.toml ./
@@ -14,13 +19,12 @@ COPY README.md ./
 COPY src/ ./src/
 COPY tests/ ./tests/
 
-# Install Python dependencies
+# Install Python dependencies with uv
 ARG INSTALL_TEST_DEPS=false
-RUN pip install --no-cache-dir --upgrade pip && \
-    if [ "$INSTALL_TEST_DEPS" = "true" ]; then \
-        pip install --no-cache-dir -e ".[dev]" pytest-xdist; \
+RUN if [ "$INSTALL_TEST_DEPS" = "true" ]; then \
+        uv pip install --system -e ".[dev]" pytest-xdist; \
     else \
-        pip install --no-cache-dir -e .; \
+        uv pip install --system -e .; \
     fi
 
 # Default command
