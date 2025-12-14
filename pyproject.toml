@@ -3,7 +3,7 @@ name = "ai-search-match-framework"
 version = "0.2.0"
 description = "Lightweight framework for AI-powered document analysis and search workflows with multi-provider support"
 authors = [
-    {name = "Vicente Cabodevilla", email = "vcaboara@gmail.com"}
+    {name = "Vincent Caboara", email = "vcaboara@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.10"
