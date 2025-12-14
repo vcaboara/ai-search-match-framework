@@ -26,7 +26,6 @@ What actually happened.
 - **ASMF Version**: [e.g., 0.2.0]
 - **Python Version**: [e.g., 3.12]
 - **OS**: [e.g., Ubuntu 22.04, Windows 11, macOS 14]
-- **AI Provider**: [e.g., Gemini, Ollama]
 
 ## Code Sample
 ```python

@@ -33,12 +33,8 @@ jobs:
             
             const labels = [];
             
-            // Provider-related
-            if (content.includes('gemini') || content.includes('google')) labels.push('provider:gemini');
-            if (content.includes('ollama')) labels.push('provider:ollama');
-            
-            // Component-related
-            if (content.includes('parser') || content.includes('pdf')) labels.push('component:parser');
+            // Component-related (framework components)
+            if (content.includes('parser')) labels.push('component:parser');
             if (content.includes('analyzer')) labels.push('component:analyzer');
             if (content.includes('provider')) labels.push('component:provider');
             
