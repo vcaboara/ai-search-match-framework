@@ -1,0 +1,93 @@
+name: Downstream Request Handler
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  handle-downstream:
+    if: contains(github.event.issue.labels.*.name, 'downstream')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Add priority triage comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const issue = context.payload.issue;
+            
+            // Check if this is a high priority blocking issue
+            const isHighPriority = issue.body && issue.body.includes('Priority:** [ ] High');
+            
+            let comment = '👋 Thanks for submitting a downstream project request!\n\n';
+            
+            if (isHighPriority) {
+              comment += '⚠️ **High Priority** - This request is marked as blocking.\n\n';
+              comment += '**Next Steps:**\n';
+              comment += '1. Maintainer will triage within 24 hours\n';
+              comment += '2. If accepted, a PR will be created or you\'ll be assigned\n';
+              comment += '3. Once merged, update the downstream project\'s ASMF version\n\n';
+              
+              // Add high-priority label
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['priority:high']
+              });
+            } else {
+              comment += '**Next Steps:**\n';
+              comment += '1. Maintainer will review and triage\n';
+              comment += '2. May be scheduled for next release\n';
+              comment += '3. PRs welcome if you want to implement it!\n\n';
+            }
+            
+            comment += '**Workflow:**\n';
+            comment += '- Issues labeled `downstream` trigger this automation\n';
+            comment += '- Accepted requests get assigned and/or a PR is created\n';
+            comment += '- After merge: bump version → create release → auto-publish to PyPI\n';
+            comment += '- Update downstream project: `pip install --upgrade ai-search-match-framework`\n\n';
+            comment += '**Contributing:**\n';
+            comment += 'Want to implement this yourself? Check out [CONTRIBUTING.md](../pull_request_template.md) and our [development docs](.github/copilot-instructions.md).';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: comment
+            });
+
+      - name: Link to downstream project
+        uses: actions/github-script@v8
+        if: contains(github.event.issue.body, 'Repository:')
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            
+            // Extract repository link using regex
+            const repoMatch = body.match(/\*\*Repository:\*\*\s*(https?:\/\/[^\s]+)/);
+            const issueMatch = body.match(/\*\*Issue\/PR Link:\*\*\s*(https?:\/\/[^\s]+)/);
+            
+            if (repoMatch || issueMatch) {
+              let comment = '🔗 **Linked Resources:**\n\n';
+              
+              if (repoMatch) {
+                comment += `- Downstream Repository: ${repoMatch[1]}\n`;
+              }
+              
+              if (issueMatch) {
+                comment += `- Related Issue/PR: ${issueMatch[1]}\n`;
+              }
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: comment
+              });
+            }
