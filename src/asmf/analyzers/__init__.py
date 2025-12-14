@@ -1,4 +1,5 @@
 """Base analyzers and analysis patterns."""
 
-# Placeholder for future analyzer implementations
-__all__ = []
+from .base_analyzer import BaseAnalyzer
+
+__all__ = ["BaseAnalyzer"]
