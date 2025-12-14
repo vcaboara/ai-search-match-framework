@@ -93,7 +93,6 @@ class PDFPatentParser:
 
         Raises:
             FileNotFoundError: If PDF doesn't exist
-            ValueError: If claims section not found
         """
         pdf_file = Path(pdf_path)
         if not pdf_file.exists():
@@ -143,7 +142,7 @@ class PDFPatentParser:
         """
         # Look for title patterns at start of document
         lines = text.split("\n")[:20]  # Check first 20 lines
-        for i, line in enumerate(lines):
+        for _, line in enumerate(lines):
             line = line.strip()
             # Title is usually short and before abstract
             # Skip common header patterns
@@ -170,7 +169,10 @@ class PDFPatentParser:
         """Extract and parse all patent claims."""
         claims_section = self._extract_claims_section(text)
         if not claims_section:
-            raise ValueError("Claims section not found in document")
+            # Per ASMF_UPDATE_NEEDED.md, handle missing claims gracefully.
+            logger.warning(
+                "No claims section found in document. Returning empty list for claims.")
+            return []
 
         # Split into individual claims
         claim_pattern = r"(\d+)\.\s+(.*?)(?=\n\d+\.\s+|\Z)"
