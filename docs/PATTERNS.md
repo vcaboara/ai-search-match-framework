@@ -213,13 +213,14 @@ CMD ["uv", "run", "python", "-m", "src.app.main"]
 
 ### Environment Variables
 ```bash
-# Required
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+# Required (at least one)
+GEMINI_API_KEY=...  # For cloud AI
+# or
+OLLAMA_BASE_URL=http://localhost:11434  # For local AI
 
 # Optional
-GEMINI_API_KEY=...
-OLLAMA_HOST=http://localhost:11434
+OPENAI_API_KEY=sk-...  # If using OpenAI
+ANTHROPIC_API_KEY=sk-ant-...  # If using Anthropic
 LOG_LEVEL=INFO
 ```
 
