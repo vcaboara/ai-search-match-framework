@@ -213,3 +213,60 @@ git aic "feat(providers): add new provider"
 ```
 
 For complete details, see [commit-conventions.md](commit-conventions.md).
+
+## Code Review Guidelines
+
+### AI-Powered Code Reviews
+
+When reviewing pull requests, refer to [CODE_REVIEW_PATTERNS.md](CODE_REVIEW_PATTERNS.md) for comprehensive anti-patterns to catch automatically.
+
+### Key Focus Areas
+
+**Performance Anti-Patterns:**
+- Regex compilation inside loops (compile at module/class level)
+- Repeated dictionary/list lookups in loops (cache values)
+- String concatenation with `+=` in loops (use `str.join()`)
+- Repeated function calls with identical arguments (call once, cache result)
+
+**Code Quality Anti-Patterns:**
+- Imports in conditional blocks or functions (move to top)
+- Deep nesting >3 levels (use early returns, extract helpers)
+- Bare `except:` clauses (catch specific exceptions)
+- Missing error handling in type conversions (`int()`, `float()`)
+- Mutable default arguments (use `None` with conditional init)
+- Silent exception handling (always log before swallowing)
+
+**Python-Specific Anti-Patterns:**
+- Complex list comprehensions with error handling (use explicit loops)
+- Using `assert` for data validation (use `raise ValueError`)
+- Not using context managers for resources (use `with` statements)
+- Eager string formatting in log statements (use lazy formatting)
+
+**Security Anti-Patterns:**
+- SQL injection via string formatting (use parameterized queries)
+- Unsafe deserialization with `pickle.load()` or `eval()` (use JSON)
+- Hardcoded credentials (use environment variables)
+- Path traversal vulnerabilities (validate and normalize paths)
+
+### Review Process
+
+1. **Automated Checks**: Run linters (black, isort, flake8, ruff, mypy) before manual review
+2. **Pattern Detection**: Scan for anti-patterns from CODE_REVIEW_PATTERNS.md
+3. **Context Analysis**: Consider performance impact, security implications, and maintainability
+4. **Constructive Feedback**: Provide specific examples and rationale for suggested changes
+5. **Acknowledge Good Patterns**: Highlight well-written code that follows best practices
+
+### Quick Review Checklist
+
+- [ ] No regex compilation in loops
+- [ ] All imports at top of file
+- [ ] Specific exceptions caught (no bare `except:`)
+- [ ] Type conversions wrapped in try/except
+- [ ] No mutable default arguments
+- [ ] Nesting depth ≤3 levels
+- [ ] Resources use `with` statements
+- [ ] No hardcoded credentials
+- [ ] SQL queries are parameterized
+- [ ] File paths are validated
+
+See [CODE_REVIEW_PATTERNS.md](CODE_REVIEW_PATTERNS.md) for detailed examples and rationale.
