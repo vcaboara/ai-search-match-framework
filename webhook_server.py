@@ -32,10 +32,12 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:1143
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:14b-q4")
 REVIEW_SCRIPT_PATH = os.getenv("REVIEW_SCRIPT_PATH", "./scripts/ollama_pr_review.py")
 
-# Validate required configuration
-if not GITHUB_TOKEN:
-    logger.error("GITHUB_TOKEN environment variable is required")
-    sys.exit(1)
+# Validate required configuration (only when running as main, not during imports for tests)
+def _validate_config():
+    """Validate required configuration."""
+    if not GITHUB_TOKEN:
+        logger.error("GITHUB_TOKEN environment variable is required")
+        sys.exit(1)
 
 
 def verify_webhook_signature(payload_body: bytes, signature_header: str) -> bool:
@@ -262,6 +264,9 @@ def root() -> tuple[dict[str, Any], int]:
 
 
 if __name__ == "__main__":
+    # Validate configuration before starting server
+    _validate_config()
+    
     # Production configuration
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("FLASK_DEBUG", "false").lower() == "true"
