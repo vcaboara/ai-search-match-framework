@@ -26,14 +26,14 @@ import asyncio
 from pathlib import Path
 from typing import Any
 
-from playwright.async_api import Browser, async_playwright
+from playwright.async_api import async_playwright
 
 
 class ScreenshotCapture:
     """Class for capturing screenshots using Playwright.
 
     Attributes:
-        viewport (Dict[str, int]): Default viewport dimensions
+        viewport (dict[str, int]): Default viewport dimensions
         timeout (int): Page load timeout in milliseconds
     """
 
@@ -51,16 +51,6 @@ class ScreenshotCapture:
         """
         self.viewport = viewport or {"width": 1920, "height": 1080}
         self.timeout = timeout
-        self._browser: Browser | None = None
-
-    async def __aenter__(self) -> "ScreenshotCapture":
-        """Async context manager entry."""
-        return self
-
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """Async context manager exit."""
-        if self._browser:
-            await self._browser.close()
 
     async def capture_async(
         self,
@@ -68,6 +58,7 @@ class ScreenshotCapture:
         output_path: str,
         full_page: bool = True,
         wait_for: str | None = None,
+        viewport: dict[str, int] | None = None,
     ) -> Path:
         """Capture a screenshot asynchronously.
 
@@ -76,6 +67,7 @@ class ScreenshotCapture:
             output_path: Path where screenshot will be saved
             full_page: Whether to capture the full scrollable page (default: True)
             wait_for: Optional CSS selector to wait for before capturing
+            viewport: Override viewport for this capture (uses instance viewport if not provided)
 
         Returns:
             Path object of the saved screenshot
@@ -83,10 +75,13 @@ class ScreenshotCapture:
         Raises:
             Exception: If screenshot capture fails
         """
+        # Use provided viewport or fall back to instance viewport
+        viewport_to_use = viewport or self.viewport
+
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             try:
-                page = await browser.new_page(viewport=self.viewport)
+                page = await browser.new_page(viewport=viewport_to_use)
                 await page.goto(url, timeout=self.timeout, wait_until="networkidle")
 
                 # Wait for specific element if specified
@@ -108,6 +103,7 @@ class ScreenshotCapture:
         output_path: str,
         full_page: bool = True,
         wait_for: str | None = None,
+        viewport: dict[str, int] | None = None,
     ) -> Path:
         """Capture a screenshot synchronously (wrapper around async method).
 
@@ -116,11 +112,12 @@ class ScreenshotCapture:
             output_path: Path where screenshot will be saved
             full_page: Whether to capture the full scrollable page (default: True)
             wait_for: Optional CSS selector to wait for before capturing
+            viewport: Override viewport for this capture (uses instance viewport if not provided)
 
         Returns:
             Path object of the saved screenshot
         """
-        return asyncio.run(self.capture_async(url, output_path, full_page, wait_for))
+        return asyncio.run(self.capture_async(url, output_path, full_page, wait_for, viewport))
 
 
 async def capture_screenshot_async(

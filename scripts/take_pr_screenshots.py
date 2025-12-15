@@ -68,15 +68,13 @@ async def capture_page_screenshots(
         print(f"Capturing {page_name} ({viewport_name}) from {branch}...")
 
         try:
-            # Update capture viewport
-            capture.viewport = viewport
-
-            # Capture screenshot
+            # Capture screenshot with specific viewport
             await capture.capture_async(
                 url=url,
                 output_path=str(output_path),
                 full_page=True,
                 wait_for=wait_for,
+                viewport=viewport,
             )
 
             results.append(

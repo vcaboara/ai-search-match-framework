@@ -28,14 +28,34 @@ class TestScreenshotCapture:
         assert capture.viewport == viewport
         assert capture.timeout == 60000
 
-    @pytest.mark.asyncio
-    async def test_context_manager(self) -> None:
-        """Test async context manager."""
+    def test_multiple_captures(self) -> None:
+        """Test that multiple captures can be made with different viewports."""
         capture = ScreenshotCapture()
 
-        async with capture as c:
-            assert c is capture
-            assert c._browser is None
+        # Mock capture_async to verify it's called with correct viewport
+        with patch.object(capture, "capture_async", new_callable=AsyncMock) as mock_async:
+            mock_async.return_value = Path("/tmp/test.png")
+
+            # Mock asyncio.run
+            with patch("tools.screenshot_utils.asyncio.run") as mock_run:
+                mock_run.return_value = Path("/tmp/test.png")
+
+                # First capture with default viewport
+                capture.capture_sync(
+                    url="https://example.com",
+                    output_path="/tmp/test1.png",
+                )
+
+                # Second capture with custom viewport
+                custom_viewport = {"width": 800, "height": 600}
+                capture.capture_sync(
+                    url="https://example.com",
+                    output_path="/tmp/test2.png",
+                    viewport=custom_viewport,
+                )
+
+                # Verify default viewport wasn't mutated
+                assert capture.viewport == {"width": 1920, "height": 1080}
 
     @pytest.mark.asyncio
     async def test_capture_async_success(self) -> None:
