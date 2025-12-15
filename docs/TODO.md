@@ -1,28 +1,17 @@
-# AI Search & Match Framework - TODO
+﻿# AI Search & Match Framework - TODO
 
-## High Priority
+## AI/ML Infrastructure & Automation
 
-### Fix CI: ModuleNotFoundError for webhook_server in Docker tests
-**Issue**: #29
-**Priority**: High - blocking main branch CI
-**Description**: CI fails because Docker container can't import webhook_server.py from project root. Tests pass locally but fail in CI.
+- [ ] **Fix CI: ModuleNotFoundError for webhook_server (#29)**
+  - Priority: P1 (blocking main branch CI)
+  - Issue: Docker container can't import webhook_server.py
+  - Root cause: webhook_server.py in project root, PYTHONPATH doesn't include it
+  - Solution: Add ENV PYTHONPATH="/workspace:${PYTHONPATH}" to Dockerfile  - Files: Dockerfile, .github/workflows/ci.yml, tests/test_webhook_server.py
+  - Expected: All tests pass in CI environment
 
-**Root Cause**:
-- webhook_server.py is in project root (not under src/)
-- Docker container's PYTHONPATH doesn't include project root
-- Tests can import locally but fail in CI Docker environment
-
-**Potential Solutions**:
-1. Add project root to PYTHONPATH in Dockerfile (preferred)
-   - Modify Dockerfile to include: `ENV PYTHONPATH="/workspace:${PYTHONPATH}"`
-2. Move webhook_server.py to src/asmf/
-   - Would require updating all imports and documentation
-3. Install as package in Docker
-   - Add setup.py or use pyproject.toml to install project as editable package
-
-**Files to Check**:
-- .github/workflows/ci.yml (line 38)
-- Dockerfile (PYTHONPATH configuration)
-- tests/test_webhook_server.py (line 11: `from webhook_server import...`)
-
-**Expected Behavior**: All tests including test_webhook_server.py should pass in CI environment
+- [ ] **Visual regression testing with Playwright (#30)**
+  - Priority: P2 (enhancement)
+  - Migrate screenshot_utils.py from job-lead-finder
+  - Create workflow for before/after PR screenshots
+  - Add playwright>=1.40.0 dependency
+  - Document in docs/VISUAL_REGRESSION.md
