@@ -14,6 +14,9 @@ COPY tests/ ./tests/
 COPY tools/ ./tools/
 COPY webhook_server.py ./
 
+# Add workspace to PYTHONPATH so tests can import tools and webhook_server
+ENV PYTHONPATH="/workspace:${PYTHONPATH}"
+
 # Install Python dependencies with uv
 ARG INSTALL_TEST_DEPS=false
 RUN if [ "$INSTALL_TEST_DEPS" = "true" ]; then \
