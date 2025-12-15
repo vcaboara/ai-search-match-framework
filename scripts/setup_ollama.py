@@ -452,8 +452,57 @@ def interactive_setup() -> None:
     # Step 3: Detect hardware
     gpu_info = detect_gpu()
     
-    # Step 4: Show recommendations
-    recommendations = recommend_models(gpu_info["vram_gb"], gpu_info["has_gpu"])
+    # Step 4: Ask about task type for better recommendations
+    print("\n" + "="*70)
+    print("What will you primarily use the model for?".center(70))
+    print("="*70)
+    print("\n1. Code review & analysis (qwen2.5-coder models)")
+    print("2. Document analysis (patents, grants, contracts)")
+    print("3. General purpose (mixed tasks)")
+    print("4. Show all hardware-based recommendations")
+    
+    task_choice = input("\nYour choice (1-4) [4]: ").strip() or "4"
+    
+    if task_choice == "4":
+        # Original behavior - show hardware-based recommendations
+        recommendations = recommend_models(gpu_info["vram_gb"], gpu_info["has_gpu"])
+    else:
+        # Use ModelSelector for task-specific recommendations
+        try:
+            from asmf.llm import ModelSelector, TaskType
+            
+            selector = ModelSelector(vram_gb=gpu_info["vram_gb"])
+            
+            task_map = {
+                "1": TaskType.CODE_REVIEW,
+                "2": TaskType.DOCUMENT_ANALYSIS,
+                "3": TaskType.GENERAL
+            }
+            
+            if task_choice in task_map:
+                task_type = task_map[task_choice]
+                model_recs = selector.get_recommendations(task_type)
+                
+                # Convert to legacy format for display
+                recommendations = []
+                for rec in model_recs:
+                    task_badge = " [TASK-OPTIMIZED]" if rec.task_optimized else ""
+                    recommendations.append({
+                        "name": rec.name + task_badge,
+                        "size": f"{rec.size_gb}GB",
+                        "quality": rec.quality,
+                        "speed": rec.speed,
+                        "description": rec.description
+                    })
+                
+                print_success(f"\nTask-specific recommendations for {task_type.value.replace('_', ' ')}")
+            else:
+                # Fallback to hardware-based
+                recommendations = recommend_models(gpu_info["vram_gb"], gpu_info["has_gpu"])
+        except ImportError:
+            # ASMF not installed yet, use legacy recommendations
+            print_warning("ModelSelector not available, using hardware-based recommendations")
+            recommendations = recommend_models(gpu_info["vram_gb"], gpu_info["has_gpu"])
     
     print("\n" + "="*70)
     print("Recommended Models:".center(70))
@@ -487,6 +536,8 @@ def interactive_setup() -> None:
             idx = int(choice) - 1
             if 0 <= idx < len(recommendations):
                 model_to_pull = recommendations[idx]["name"]
+                # Strip task badge if present
+                model_to_pull = model_to_pull.replace(" [TASK-OPTIMIZED]", "")
                 if pull_model(model_to_pull):
                     selected_model = model_to_pull
                 else:

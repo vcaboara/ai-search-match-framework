@@ -145,6 +145,149 @@ ollama pull qwen2.5-coder:7b   # Mid/low-end
 ollama pull aya:35b  # Supports 101 languages
 ```
 
+## Task-Specific Model Selection
+
+ASMF includes a `ModelSelector` for automatic task-specific model recommendations:
+
+### Using ModelSelector
+
+```python
+from asmf.llm import ModelSelector, TaskType
+
+# Auto-detect GPU and get recommendations
+selector = ModelSelector()
+
+# Get best model for code review
+code_review_model = selector.select_model(TaskType.CODE_REVIEW)
+print(f"Best for code review: {code_review_model}")
+
+# Get best model for document analysis
+doc_model = selector.select_model(TaskType.DOCUMENT_ANALYSIS)
+print(f"Best for documents: {doc_model}")
+
+# See all recommendations for a task
+selector.print_recommendations(TaskType.CODE_GENERATION)
+```
+
+### Task Types and Optimized Models
+
+| Task Type | Description | Optimized Models |
+|-----------|-------------|------------------|
+| **CODE_REVIEW** | Reviewing PRs, finding bugs, suggesting improvements | `qwen2.5-coder:32b`, `qwen2.5-coder:14b`, `qwen2.5-coder:7b` |
+| **CODE_GENERATION** | Writing code, implementing features, generating boilerplate | `qwen2.5-coder:32b`, `qwen2.5-coder:14b`, `qwen2.5-coder:7b` |
+| **DOCUMENT_ANALYSIS** | Patent analysis, grant evaluation, contract review | `qwen2.5:32b-q4`, `qwen2.5:14b-q4`, `llama3.2:3b` |
+| **GENERAL** | General-purpose tasks, Q&A, summarization | `qwen2.5:32b-q4`, `qwen2.5:14b-q4`, `mistral:7b-q4` |
+
+### Examples by Use Case
+
+#### Code Review Workflow
+```python
+from asmf.llm import ModelSelector, TaskType
+from asmf.providers import OllamaProvider
+
+# Select optimal code review model
+selector = ModelSelector()
+model = selector.select_model(TaskType.CODE_REVIEW, check_availability=True)
+
+# Use with OllamaProvider
+provider = OllamaProvider(model=model)
+result = provider.analyze_text("""
+Review this Python code for potential issues:
+
+def calculate_total(items):
+    total = 0
+    for item in items:
+        total = total + item['price']
+    return total
+""")
+print(result)
+```
+
+#### Document Analysis Workflow
+```python
+from asmf.llm import ModelSelector, TaskType
+from asmf.providers import OllamaProvider
+from asmf.parsers import PDFParser
+
+# Setup with task-specific model
+selector = ModelSelector()
+model = selector.select_model(TaskType.DOCUMENT_ANALYSIS)
+provider = OllamaProvider(model=model)
+parser = PDFParser()
+
+# Analyze patent document
+patent_text = parser.extract_text("patent.pdf")
+analysis = provider.analyze_text(f"""
+Evaluate this patent for prior art conflicts:
+
+{patent_text[:2000]}
+""")
+print(analysis)
+```
+
+#### Batch Code Generation
+```python
+from asmf.llm import ModelSelector, TaskType
+from asmf.providers import OllamaProvider
+
+# Use fastest code generation model
+selector = ModelSelector()
+model = selector.select_model(TaskType.CODE_GENERATION)
+provider = OllamaProvider(model=model)
+
+prompts = [
+    "Write a Python function to validate email addresses",
+    "Create a REST API endpoint for user registration",
+    "Generate unit tests for a sorting function"
+]
+
+for prompt in prompts:
+    code = provider.analyze_text(prompt)
+    print(f"\n{'='*60}")
+    print(prompt)
+    print(f"{'='*60}")
+    print(code)
+```
+
+### Manual Override
+
+```python
+from asmf.llm import ModelSelector
+
+# Override VRAM detection (useful for testing)
+selector = ModelSelector(vram_gb=4.0)  # Simulate 4GB GPU
+
+# Get recommendations for low-end hardware
+recs = selector.get_recommendations(TaskType.CODE_REVIEW)
+for rec in recs:
+    print(f"{rec.name}: {rec.description}")
+```
+
+### Hardware-Aware Recommendations
+
+The `ModelSelector` automatically considers your hardware:
+
+```python
+from asmf.llm import ModelSelector, TaskType
+
+selector = ModelSelector()
+print(f"Detected: {selector.vram_gb}GB VRAM ({selector.gpu_vendor})")
+
+# Automatically gets appropriate models for your GPU
+if selector.vram_gb >= 12:
+    # High-end: qwen2.5-coder:32b for code tasks
+    pass
+elif selector.vram_gb >= 8:
+    # Mid-range: qwen2.5-coder:14b for code tasks
+    pass
+else:
+    # Low-end: qwen2.5-coder:7b for code tasks
+    pass
+
+# Just call select_model() - it handles everything
+model = selector.select_model(TaskType.CODE_REVIEW)
+```
+
 ## Configuration
 
 ### Environment Variables

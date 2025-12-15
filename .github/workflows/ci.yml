@@ -35,7 +35,7 @@ jobs:
         run: |
           docker run --rm \
             -v $(pwd):/workspace/output \
-            asmf-ci:latest pytest -n auto --cov=src/asmf --cov=webhook_server --cov-report=xml:output/coverage.xml --cov-report=term
+            asmf-ci:latest pytest -n auto --cov=src/asmf --cov=webhook_server.py --cov-report=xml:output/coverage.xml --cov-report=term
       
       - name: Verify coverage file
         run: ls -la coverage.xml

@@ -49,6 +49,7 @@ results = analyzer.batch_analyze([doc1, doc2])
 | `providers` | AI provider interface (Gemini, Ollama) with failover |
 | `parsers` | Document parsing (PDF, etc.) with structured output |
 | `analyzers` | Base classes for domain-specific analysis logic |
+| `llm` | Task-specific model selection with VRAM detection |
 | `utils` | Configuration, logging, common utilities |
 
 ## Configuration
@@ -89,9 +90,15 @@ provider = AIProviderFactory.create_provider(prefer_local=True)
 from asmf.providers import GeminiProvider, OllamaProvider
 gemini = GeminiProvider(api_key="...", model="gemini-1.5-pro")
 ollama = OllamaProvider(model="qwen2.5:14b-q4", base_url="http://localhost:11434")
+
+# Task-specific model selection (NEW!)
+from asmf.llm import ModelSelector, TaskType
+selector = ModelSelector()  # Auto-detects GPU
+model = selector.select_model(TaskType.CODE_REVIEW)  # Best model for code review
+ollama = OllamaProvider(model=model)
 ```
 
-See [docs/OLLAMA_SETUP.md](docs/OLLAMA_SETUP.md) for comprehensive Ollama setup guide.
+See [docs/OLLAMA_SETUP.md](docs/OLLAMA_SETUP.md) for comprehensive Ollama setup guide and task-specific model recommendations.
 
 ## Use Cases
 
