@@ -5,7 +5,8 @@ WORKDIR /workspace
 # Install uv from official image (faster and more reliable than curl install)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy project files
+# Copy project files (including tools/ and webhook_server.py for tests)
+# Updated 2025-12-15 to include new test dependencies
 COPY pyproject.toml ./
 COPY README.md ./
 COPY src/ ./src/
