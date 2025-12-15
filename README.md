@@ -52,17 +52,45 @@ results = analyzer.batch_analyze([doc1, doc2])
 
 ## Configuration
 
-Set environment variables:
+### Quick Start with Ollama (Local, Free)
+
 ```bash
-GEMINI_API_KEY=your_key_here
-OLLAMA_BASE_URL=http://localhost:11434  # optional
+# 1. Install Ollama: https://ollama.ai/download
+# 2. Pull a model
+ollama pull qwen2.5:14b-q4
+
+# 3. Configure ASMF
+echo "OLLAMA_BASE_URL=http://localhost:11434" >> .env
+echo "PREFER_LOCAL=true" >> .env
 ```
 
-Or configure in code:
-```python
-provider = GeminiProvider(api_key="...", model="gemini-1.5-pro")
-provider = OllamaProvider(model="llama2")
+Or use the automated setup:
+```bash
+python scripts/setup_ollama.py
 ```
+
+### Cloud Provider Setup
+
+Set environment variables:
+```bash
+GEMINI_API_KEY=your_key_here  # For Gemini
+PREFER_LOCAL=false  # Cloud-first (default)
+```
+
+### Advanced Configuration
+
+```python
+# Local-first with fallback
+from asmf.providers import AIProviderFactory
+provider = AIProviderFactory.create_provider(prefer_local=True)
+
+# Direct provider usage
+from asmf.providers import GeminiProvider, OllamaProvider
+gemini = GeminiProvider(api_key="...", model="gemini-1.5-pro")
+ollama = OllamaProvider(model="qwen2.5:14b-q4", base_url="http://localhost:11434")
+```
+
+See [docs/OLLAMA_SETUP.md](docs/OLLAMA_SETUP.md) for comprehensive Ollama setup guide.
 
 ## Use Cases
 

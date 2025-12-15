@@ -1,0 +1,186 @@
+# Docker Compose Example for ASMF with Ollama
+# 
+# This configuration shows how to run ASMF with local Ollama for AI inference.
+# Copy this file to docker-compose.yml and customize for your needs.
+
+version: '3.8'
+
+services:
+  # Ollama service for local LLM inference
+  ollama:
+    image: ollama/ollama:latest
+    container_name: asmf-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      # Persist models across container restarts
+      - ollama-models:/root/.ollama
+    environment:
+      # Optional: Configure Ollama settings
+      - OLLAMA_KEEP_ALIVE=5m  # Keep models in memory
+      - OLLAMA_NUM_PARALLEL=1  # Number of parallel requests
+      - OLLAMA_MAX_LOADED_MODELS=1  # Max models in memory
+    restart: unless-stopped
+    # GPU support (NVIDIA)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    # Uncomment for CPU-only deployment:
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '4'
+    #       memory: 8G
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ASMF application service
+  asmf-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asmf-application
+    ports:
+      - "5000:5000"  # Flask API port
+    volumes:
+      # Mount source code for development
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    environment:
+      # Ollama configuration
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5:14b-q4
+      - OLLAMA_TIMEOUT=30.0
+      
+      # Provider priority
+      - PREFER_LOCAL=true
+      
+      # Gemini fallback (optional)
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      
+      # Application settings
+      - LOG_LEVEL=INFO
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      
+      # Data directories
+      - DATA_DIR=/app/data
+      - LOGS_DIR=/app/logs
+      - UPLOADS_DIR=/app/uploads
+    
+    depends_on:
+      ollama:
+        condition: service_healthy
+    
+    restart: unless-stopped
+    
+    # Optional: Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Command override for development
+    # command: python -m flask run --host=0.0.0.0 --port=5000 --debug
+
+  # Optional: Model initialization service (runs once)
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: asmf-ollama-init
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        echo "Pulling recommended models..."
+        ollama pull qwen2.5:14b-q4
+        echo "Model initialization complete"
+    restart: "no"
+    profiles:
+      - init  # Only run when explicitly requested
+
+volumes:
+  ollama-models:
+    name: asmf-ollama-models
+    driver: local
+
+# Usage Examples:
+#
+# 1. Start services:
+#    docker-compose up -d
+#
+# 2. Initialize models (first time):
+#    docker-compose --profile init up ollama-init
+#
+# 3. View logs:
+#    docker-compose logs -f
+#    docker-compose logs -f ollama
+#    docker-compose logs -f asmf-app
+#
+# 4. Stop services:
+#    docker-compose down
+#
+# 5. Remove volumes (clean slate):
+#    docker-compose down -v
+#
+# 6. Build and start:
+#    docker-compose up -d --build
+#
+# 7. Execute commands in containers:
+#    docker-compose exec ollama ollama list
+#    docker-compose exec asmf-app python -c "from asmf.providers import OllamaProvider; print(OllamaProvider().is_available())"
+#
+# 8. Scale application (if needed):
+#    docker-compose up -d --scale asmf-app=3
+
+# Advanced Configuration:
+#
+# GPU Support (NVIDIA):
+# - Ensure nvidia-docker2 is installed
+# - Uncomment GPU deployment configuration above
+#
+# AMD GPU Support:
+# - Use ROCm-enabled Ollama image
+# - Modify deployment configuration for AMD
+#
+# Multi-node setup:
+# - Deploy Ollama on dedicated GPU server
+# - Point ASMF services to remote Ollama URL
+#
+# Production considerations:
+# - Use .env file for secrets (not checked into git)
+# - Set up proper logging and monitoring
+# - Configure backup for ollama-models volume
+# - Use Docker secrets for sensitive data
+# - Set up reverse proxy (nginx/traefik) for HTTPS
+# - Configure proper network security groups

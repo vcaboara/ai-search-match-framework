@@ -140,19 +140,52 @@ Application logging:
 
 ## Environment Variables
 
-Required API keys (set in `.env`):
+### LLM Provider Configuration
+
+**Cloud Providers** (at least one recommended for fallback):
 
 ```bash
-# LLM Providers (at least one required)
+# Google Gemini (recommended cloud provider)
+GEMINI_API_KEY=your-gemini-key-here
+
+# OpenAI (if using custom configurations)
 OPENAI_API_KEY=sk-...
+
+# Anthropic Claude (if using custom configurations)
 ANTHROPIC_API_KEY=sk-ant-...
-GEMINI_API_KEY=...
+```
 
-# Optional
-OLLAMA_HOST=http://localhost:11434
+**Local Provider - Ollama** (privacy-focused, cost-free):
+
+```bash
+# Ollama Configuration
+OLLAMA_BASE_URL=http://localhost:11434  # Default Ollama endpoint
+OLLAMA_MODEL=qwen2.5:14b-q4  # Model to use
+OLLAMA_TIMEOUT=5.0  # Connection timeout in seconds
+
+# Provider Priority
+PREFER_LOCAL=true  # Try Ollama first, fallback to cloud
+```
+
+**Setup Ollama:**
+1. Install from [ollama.ai/download](https://ollama.ai/download)
+2. Pull a model: `ollama pull qwen2.5:14b-q4`
+3. Or run: `python scripts/setup_ollama.py`
+
+See [OLLAMA_SETUP.md](OLLAMA_SETUP.md) for detailed setup guide including:
+- Model recommendations by GPU/VRAM
+- Performance optimization
+- Troubleshooting
+- Docker deployment
+
+**Additional Settings:**
+
+```bash
+# Application Settings
 LOG_LEVEL=INFO
+ENVIRONMENT=development
 
-# Custom provider keys
+# Custom provider keys (if needed)
 CUSTOM_API_KEY=...
 ```
 
