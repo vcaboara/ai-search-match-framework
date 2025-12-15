@@ -3,7 +3,6 @@
 # This configuration shows how to run ASMF with local Ollama for AI inference.
 # Copy this file to docker-compose.yml and customize for your needs.
 
-version: '3.8'
 
 services:
   # Ollama service for local LLM inference
