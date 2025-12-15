@@ -1,0 +1,34 @@
+# Example Visual Regression Testing Configuration
+#
+# This is a minimal example configuration for visual regression testing.
+# Copy this file to your project as `config/visual-test.yaml` and customize.
+#
+# For full documentation, see docs/VISUAL_REGRESSION.md
+
+# Base URL for the application
+# Can be overridden with --base-url flag
+base_url: "http://localhost:5000"
+
+# Viewport configurations for different screen sizes
+viewports:
+  desktop:
+    width: 1920
+    height: 1080
+  mobile:
+    width: 375
+    height: 667
+
+# Pages to screenshot
+# Add all pages you want to test
+pages:
+  - name: "home"
+    path: "/"
+    viewports: ["desktop", "mobile"]
+    wait_for: null  # Optional: CSS selector to wait for
+
+# Settings
+settings:
+  timeout: 30000  # Page load timeout in milliseconds
+  full_page: true  # Capture full page or just viewport
+  output_dir: "visual-tests"  # Output directory for screenshots
+  format: "png"  # Image format (png or jpeg)
