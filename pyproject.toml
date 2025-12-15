@@ -31,6 +31,7 @@ dependencies = [
     "pypdf>=3.17.0",
     "pdfplumber>=0.10.0",
     "httpx>=0.25.0",
+    "playwright>=1.40.0",
 ]
 
 [project.optional-dependencies]
