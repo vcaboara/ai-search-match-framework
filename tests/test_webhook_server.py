@@ -2,16 +2,17 @@
 
 import json
 import os
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 # Mock GITHUB_TOKEN before importing webhook_server
 with patch.dict(os.environ, {"GITHUB_TOKEN": "test_token"}):
     from webhook_server import (
         app,
-        verify_webhook_signature,
         is_copilot_authored,
         post_pr_comment,
+        verify_webhook_signature,
     )
 
 
@@ -30,13 +31,14 @@ class TestWebhookSignatureVerification:
         """Test successful signature verification."""
         payload = b'{"test": "data"}'
         secret = "test_secret"
-        
+
         # Generate valid signature
-        import hmac
         import hashlib
+        import hmac
+
         mac = hmac.new(secret.encode(), msg=payload, digestmod=hashlib.sha256)
         signature = f"sha256={mac.hexdigest()}"
-        
+
         with patch("webhook_server.GITHUB_WEBHOOK_SECRET", secret):
             assert verify_webhook_signature(payload, signature)
 
@@ -44,7 +46,7 @@ class TestWebhookSignatureVerification:
         """Test failed signature verification."""
         payload = b'{"test": "data"}'
         signature = "sha256=invalid_signature"
-        
+
         with patch("webhook_server.GITHUB_WEBHOOK_SECRET", "test_secret"):
             assert not verify_webhook_signature(payload, signature)
 
@@ -52,7 +54,7 @@ class TestWebhookSignatureVerification:
         """Test signature verification when no secret is configured."""
         payload = b'{"test": "data"}'
         signature = "sha256=anything"
-        
+
         with patch("webhook_server.GITHUB_WEBHOOK_SECRET", None):
             # Should return True (skip verification) with warning logged
             assert verify_webhook_signature(payload, signature)
@@ -60,7 +62,7 @@ class TestWebhookSignatureVerification:
     def test_verify_signature_no_header(self):
         """Test signature verification with missing header."""
         payload = b'{"test": "data"}'
-        
+
         with patch("webhook_server.GITHUB_WEBHOOK_SECRET", "test_secret"):
             assert not verify_webhook_signature(payload, None)
 
@@ -68,7 +70,7 @@ class TestWebhookSignatureVerification:
         """Test signature verification with wrong algorithm."""
         payload = b'{"test": "data"}'
         signature = "sha1=somehash"
-        
+
         with patch("webhook_server.GITHUB_WEBHOOK_SECRET", "test_secret"):
             assert not verify_webhook_signature(payload, signature)
 
@@ -78,33 +80,22 @@ class TestCopilotAuthorDetection:
 
     def test_is_copilot_by_username(self):
         """Test detection by username."""
-        pr_data = {
-            "user": {"login": "github-copilot[bot]"}
-        }
+        pr_data = {"user": {"login": "github-copilot[bot]"}}
         assert is_copilot_authored(pr_data)
 
     def test_is_copilot_by_body(self):
         """Test detection by PR body content."""
-        pr_data = {
-            "user": {"login": "user123"},
-            "body": "This PR was created with GitHub Copilot"
-        }
+        pr_data = {"user": {"login": "user123"}, "body": "This PR was created with GitHub Copilot"}
         assert is_copilot_authored(pr_data)
 
     def test_is_not_copilot(self):
         """Test non-Copilot PR detection."""
-        pr_data = {
-            "user": {"login": "human_user"},
-            "body": "Manual PR"
-        }
+        pr_data = {"user": {"login": "human_user"}, "body": "Manual PR"}
         assert not is_copilot_authored(pr_data)
 
     def test_is_copilot_empty_body(self):
         """Test Copilot detection with empty body."""
-        pr_data = {
-            "user": {"login": "copilot-bot"},
-            "body": None
-        }
+        pr_data = {"user": {"login": "copilot-bot"}, "body": None}
         assert is_copilot_authored(pr_data)
 
 
@@ -117,7 +108,7 @@ class TestGitHubAPIIntegration:
         mock_response = Mock()
         mock_response.status_code = 201
         mock_post.return_value = mock_response
-        
+
         with patch("webhook_server.GITHUB_TOKEN", "test_token"):
             result = post_pr_comment("owner/repo", 123, "Test comment")
             assert result is True
@@ -127,8 +118,9 @@ class TestGitHubAPIIntegration:
     def test_post_pr_comment_failure(self, mock_post):
         """Test failed comment posting."""
         import requests
+
         mock_post.side_effect = requests.RequestException("API Error")
-        
+
         with patch("webhook_server.GITHUB_TOKEN", "test_token"):
             result = post_pr_comment("owner/repo", 123, "Test comment")
             assert result is False
@@ -158,15 +150,15 @@ class TestWebhookEndpoints:
     def test_webhook_invalid_signature(self, mock_verify, client):
         """Test webhook with invalid signature."""
         mock_verify.return_value = False
-        
+
         response = client.post(
             "/webhook",
             data=json.dumps({"action": "opened"}),
             headers={
                 "Content-Type": "application/json",
                 "X-GitHub-Event": "pull_request",
-                "X-Hub-Signature-256": "sha256=invalid"
-            }
+                "X-Hub-Signature-256": "sha256=invalid",
+            },
         )
         assert response.status_code == 403
 
@@ -174,15 +166,15 @@ class TestWebhookEndpoints:
     def test_webhook_non_pr_event(self, mock_verify, client):
         """Test webhook with non-PR event."""
         mock_verify.return_value = True
-        
+
         response = client.post(
             "/webhook",
             data=json.dumps({"action": "opened"}),
             headers={
                 "Content-Type": "application/json",
                 "X-GitHub-Event": "push",
-                "X-Hub-Signature-256": "sha256=valid"
-            }
+                "X-Hub-Signature-256": "sha256=valid",
+            },
         )
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -192,26 +184,21 @@ class TestWebhookEndpoints:
     def test_webhook_draft_pr(self, mock_verify, client):
         """Test webhook skips draft PRs."""
         mock_verify.return_value = True
-        
+
         payload = {
             "action": "opened",
-            "pull_request": {
-                "number": 123,
-                "draft": True
-            },
-            "repository": {
-                "full_name": "owner/repo"
-            }
+            "pull_request": {"number": 123, "draft": True},
+            "repository": {"full_name": "owner/repo"},
         }
-        
+
         response = client.post(
             "/webhook",
             data=json.dumps(payload),
             headers={
                 "Content-Type": "application/json",
                 "X-GitHub-Event": "pull_request",
-                "X-Hub-Signature-256": "sha256=valid"
-            }
+                "X-Hub-Signature-256": "sha256=valid",
+            },
         )
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -220,42 +207,38 @@ class TestWebhookEndpoints:
     @patch("webhook_server.verify_webhook_signature")
     @patch("webhook_server.review_pr_with_ollama")
     @patch("webhook_server.post_pr_comment")
-    def test_webhook_successful_review(
-        self, mock_post_comment, mock_review, mock_verify, client
-    ):
+    def test_webhook_successful_review(self, mock_post_comment, mock_review, mock_verify, client):
         """Test successful PR review workflow."""
         mock_verify.return_value = True
         mock_review.return_value = "## Review Result\n\nNo issues found."
         mock_post_comment.return_value = True
-        
+
         payload = {
             "action": "ready_for_review",
             "pull_request": {
                 "number": 123,
                 "draft": False,
                 "user": {"login": "testuser"},
-                "body": "Test PR"
+                "body": "Test PR",
             },
-            "repository": {
-                "full_name": "owner/repo"
-            }
+            "repository": {"full_name": "owner/repo"},
         }
-        
+
         response = client.post(
             "/webhook",
             data=json.dumps(payload),
             headers={
                 "Content-Type": "application/json",
                 "X-GitHub-Event": "pull_request",
-                "X-Hub-Signature-256": "sha256=valid"
-            }
+                "X-Hub-Signature-256": "sha256=valid",
+            },
         )
-        
+
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data["message"] == "Review completed and posted"
         assert data["pr_number"] == 123
-        
+
         # Verify review was called
         mock_review.assert_called_once()
         mock_post_comment.assert_called_once()
@@ -263,37 +246,33 @@ class TestWebhookEndpoints:
     @patch("webhook_server.verify_webhook_signature")
     @patch("webhook_server.review_pr_with_ollama")
     @patch("webhook_server.post_pr_comment")
-    def test_webhook_review_failure(
-        self, mock_post_comment, mock_review, mock_verify, client
-    ):
+    def test_webhook_review_failure(self, mock_post_comment, mock_review, mock_verify, client):
         """Test PR review failure handling."""
         mock_verify.return_value = True
         mock_review.return_value = None  # Review failed
         mock_post_comment.return_value = True
-        
+
         payload = {
             "action": "opened",
             "pull_request": {
                 "number": 123,
                 "draft": False,
                 "user": {"login": "testuser"},
-                "body": "Test PR"
+                "body": "Test PR",
             },
-            "repository": {
-                "full_name": "owner/repo"
-            }
+            "repository": {"full_name": "owner/repo"},
         }
-        
+
         response = client.post(
             "/webhook",
             data=json.dumps(payload),
             headers={
                 "Content-Type": "application/json",
                 "X-GitHub-Event": "pull_request",
-                "X-Hub-Signature-256": "sha256=valid"
-            }
+                "X-Hub-Signature-256": "sha256=valid",
+            },
         )
-        
+
         assert response.status_code == 500
         # Should post error comment
         mock_post_comment.assert_called_once()
