@@ -37,6 +37,7 @@ results = analyzer.batch_analyze([doc1, doc2])
 - 🤖 **Multi-provider AI** - Unified interface for Gemini, Ollama with automatic fallback
 - 📄 **Document parsing** - Extract structured data from PDFs and other formats
 - 🔧 **Extensible analyzers** - Base classes for custom domain logic
+- 🔍 **PR Review Webhook** - Automated code review using Ollama with anti-pattern detection
 - 🎯 **Type-safe** - Full type hints for excellent IDE support
 - ✅ **Well-tested** - 78%+ coverage, production-ready
 - 🐳 **Docker support** - Containerized testing and deployment
@@ -113,6 +114,8 @@ See [examples/job_finder/](https://github.com/vcaboara/ai-search-match-framework
 - **[API Reference](https://github.com/vcaboara/ai-search-match-framework/tree/main/docs)** - Detailed docs
 - **[Configuration](https://github.com/vcaboara/ai-search-match-framework/blob/main/docs/CONFIGURATION.md)** - Setup guide
 - **[Usage Patterns](https://github.com/vcaboara/ai-search-match-framework/blob/main/docs/PATTERNS.md)** - Best practices
+- **[Ollama Setup](https://github.com/vcaboara/ai-search-match-framework/blob/main/docs/OLLAMA_SETUP.md)** - Local LLM setup
+- **[Webhook Server](https://github.com/vcaboara/ai-search-match-framework/blob/main/docs/WEBHOOK_SERVER.md)** - Automated PR review with Ollama
 
 ## Requirements
 
