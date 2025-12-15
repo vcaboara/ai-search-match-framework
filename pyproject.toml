@@ -70,17 +70,21 @@ markers = [
 ]
 addopts = [
     "--cov=src/asmf",
+    "--cov=webhook_server.py",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-fail-under=75",
 ]
 
 [tool.coverage.run]
-source = ["src/asmf"]
+source = ["src/asmf", "."]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",
     "*/site-packages/*",
+    "setup.py",
+    "scripts/*",
+    "examples/*",
 ]
 
 [tool.coverage.report]
