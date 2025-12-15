@@ -10,6 +10,8 @@ COPY pyproject.toml ./
 COPY README.md ./
 COPY src/ ./src/
 COPY tests/ ./tests/
+COPY tools/ ./tools/
+COPY webhook_server.py ./
 
 # Install Python dependencies with uv
 ARG INSTALL_TEST_DEPS=false
