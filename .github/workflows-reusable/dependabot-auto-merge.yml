@@ -1,0 +1,35 @@
+name: Reusable Dependabot Auto-Merge
+
+on:
+  workflow_call:
+    inputs:
+      auto-merge-dependabot:
+        description: 'Enable auto-merge for dependabot PRs'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      github-token:
+        description: 'GitHub token with pull-requests:write permission'
+        required: false
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    if: github.actor == 'dependabot[bot]' && inputs.auto-merge-dependabot
+    
+    steps:
+      - name: Enable auto-merge
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN }}
+        run: |
+          # Wait for checks to complete
+          sleep 5
+          
+          # Enable auto-merge with squash
+          gh pr merge --auto --squash "$PR_URL" || echo "Auto-merge already enabled or failed"
