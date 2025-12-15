@@ -97,7 +97,9 @@ MIT License - See [LICENSE](https://github.com/vcaboara/ai-search-match-framewor
 
 ## Contributing
 
-Contributions welcome! See [Contributing Guide](https://github.com/vcaboara/ai-search-match-framework/blob/main/.github/pull_request_template.md).
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+**AI Contributions**: We track AI-generated commits with `[AI]` prefix for accessibility advocacy and productivity metrics. See [commit conventions](.github/commit-conventions.md) for details.
 
 ---
 
