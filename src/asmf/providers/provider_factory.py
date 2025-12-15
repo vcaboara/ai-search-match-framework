@@ -52,7 +52,8 @@ class AIProviderFactory:
         errors = {}
 
         for provider_cls in provider_classes:
-            provider_name = provider_cls.__name__
+            # Get provider name safely (works with both real classes and mocks)
+            provider_name = getattr(provider_cls, '__name__', provider_cls.__class__.__name__)
             tried_providers.append(provider_name)
             
             try:
