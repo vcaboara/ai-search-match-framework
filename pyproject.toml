@@ -70,6 +70,7 @@ markers = [
 ]
 addopts = [
     "--cov=src/asmf",
+    "--cov=webhook_server",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-fail-under=75",
