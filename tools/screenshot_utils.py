@@ -6,16 +6,16 @@ viewport sizes. It can be used for visual regression testing in CI/CD pipelines.
 Example:
     Async usage:
         from tools.screenshot_utils import capture_screenshot_async
-        
+
         await capture_screenshot_async(
             url="https://example.com",
             output_path="screenshot.png",
             viewport={"width": 1920, "height": 1080}
         )
-    
+
     Sync usage:
         from tools.screenshot_utils import capture_screenshot
-        
+
         capture_screenshot(
             url="https://example.com",
             output_path="screenshot.png"
@@ -24,14 +24,14 @@ Example:
 
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
-from playwright.async_api import Browser, Page, async_playwright
+from playwright.async_api import Browser, async_playwright
 
 
 class ScreenshotCapture:
     """Class for capturing screenshots using Playwright.
-    
+
     Attributes:
         viewport (Dict[str, int]): Default viewport dimensions
         timeout (int): Page load timeout in milliseconds
@@ -39,19 +39,19 @@ class ScreenshotCapture:
 
     def __init__(
         self,
-        viewport: Optional[Dict[str, int]] = None,
+        viewport: dict[str, int] | None = None,
         timeout: int = 30000,
     ) -> None:
         """Initialize ScreenshotCapture.
-        
+
         Args:
-            viewport: Dictionary with 'width' and 'height' keys. 
+            viewport: Dictionary with 'width' and 'height' keys.
                      Defaults to 1920x1080.
             timeout: Page load timeout in milliseconds. Defaults to 30000 (30s).
         """
         self.viewport = viewport or {"width": 1920, "height": 1080}
         self.timeout = timeout
-        self._browser: Optional[Browser] = None
+        self._browser: Browser | None = None
 
     async def __aenter__(self) -> "ScreenshotCapture":
         """Async context manager entry."""
@@ -67,19 +67,19 @@ class ScreenshotCapture:
         url: str,
         output_path: str,
         full_page: bool = True,
-        wait_for: Optional[str] = None,
+        wait_for: str | None = None,
     ) -> Path:
         """Capture a screenshot asynchronously.
-        
+
         Args:
             url: URL to capture
             output_path: Path where screenshot will be saved
             full_page: Whether to capture the full scrollable page (default: True)
             wait_for: Optional CSS selector to wait for before capturing
-            
+
         Returns:
             Path object of the saved screenshot
-            
+
         Raises:
             Exception: If screenshot capture fails
         """
@@ -88,16 +88,16 @@ class ScreenshotCapture:
             try:
                 page = await browser.new_page(viewport=self.viewport)
                 await page.goto(url, timeout=self.timeout, wait_until="networkidle")
-                
+
                 # Wait for specific element if specified
                 if wait_for:
                     await page.wait_for_selector(wait_for, timeout=self.timeout)
-                
+
                 # Capture screenshot
                 output = Path(output_path)
                 output.parent.mkdir(parents=True, exist_ok=True)
                 await page.screenshot(path=str(output), full_page=full_page)
-                
+
                 return output
             finally:
                 await browser.close()
@@ -107,16 +107,16 @@ class ScreenshotCapture:
         url: str,
         output_path: str,
         full_page: bool = True,
-        wait_for: Optional[str] = None,
+        wait_for: str | None = None,
     ) -> Path:
         """Capture a screenshot synchronously (wrapper around async method).
-        
+
         Args:
             url: URL to capture
             output_path: Path where screenshot will be saved
             full_page: Whether to capture the full scrollable page (default: True)
             wait_for: Optional CSS selector to wait for before capturing
-            
+
         Returns:
             Path object of the saved screenshot
         """
@@ -126,13 +126,13 @@ class ScreenshotCapture:
 async def capture_screenshot_async(
     url: str,
     output_path: str,
-    viewport: Optional[Dict[str, int]] = None,
+    viewport: dict[str, int] | None = None,
     full_page: bool = True,
     timeout: int = 30000,
-    wait_for: Optional[str] = None,
+    wait_for: str | None = None,
 ) -> Path:
     """Capture a screenshot asynchronously (convenience function).
-    
+
     Args:
         url: URL to capture
         output_path: Path where screenshot will be saved
@@ -140,10 +140,10 @@ async def capture_screenshot_async(
         full_page: Whether to capture the full scrollable page (default: True)
         timeout: Page load timeout in milliseconds
         wait_for: Optional CSS selector to wait for before capturing
-        
+
     Returns:
         Path object of the saved screenshot
-        
+
     Example:
         await capture_screenshot_async(
             url="https://example.com",
@@ -158,13 +158,13 @@ async def capture_screenshot_async(
 def capture_screenshot(
     url: str,
     output_path: str,
-    viewport: Optional[Dict[str, int]] = None,
+    viewport: dict[str, int] | None = None,
     full_page: bool = True,
     timeout: int = 30000,
-    wait_for: Optional[str] = None,
+    wait_for: str | None = None,
 ) -> Path:
     """Capture a screenshot synchronously (convenience function).
-    
+
     Args:
         url: URL to capture
         output_path: Path where screenshot will be saved
@@ -172,10 +172,10 @@ def capture_screenshot(
         full_page: Whether to capture the full scrollable page (default: True)
         timeout: Page load timeout in milliseconds
         wait_for: Optional CSS selector to wait for before capturing
-        
+
     Returns:
         Path object of the saved screenshot
-        
+
     Example:
         capture_screenshot(
             url="https://example.com",
@@ -196,18 +196,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Capture screenshots using Playwright")
     parser.add_argument("url", help="URL to capture")
     parser.add_argument("output", help="Output file path")
-    parser.add_argument(
-        "--width", type=int, default=1920, help="Viewport width (default: 1920)"
-    )
-    parser.add_argument(
-        "--height", type=int, default=1080, help="Viewport height (default: 1080)"
-    )
+    parser.add_argument("--width", type=int, default=1920, help="Viewport width (default: 1920)")
+    parser.add_argument("--height", type=int, default=1080, help="Viewport height (default: 1080)")
     parser.add_argument(
         "--timeout", type=int, default=30000, help="Page load timeout in ms (default: 30000)"
     )
-    parser.add_argument(
-        "--wait-for", help="CSS selector to wait for before capturing"
-    )
+    parser.add_argument("--wait-for", help="CSS selector to wait for before capturing")
     parser.add_argument(
         "--no-full-page", action="store_true", help="Capture viewport only (not full page)"
     )

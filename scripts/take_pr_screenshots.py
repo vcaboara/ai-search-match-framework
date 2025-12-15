@@ -14,7 +14,7 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
 
@@ -27,13 +27,13 @@ from tools.screenshot_utils import ScreenshotCapture
 async def capture_page_screenshots(
     capture: ScreenshotCapture,
     base_url: str,
-    page_config: Dict[str, Any],
-    viewports: Dict[str, Dict[str, int]],
+    page_config: dict[str, Any],
+    viewports: dict[str, dict[str, int]],
     output_dir: Path,
     branch: str,
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     """Capture screenshots for a single page across multiple viewports.
-    
+
     Args:
         capture: ScreenshotCapture instance
         base_url: Base URL of the application
@@ -41,7 +41,7 @@ async def capture_page_screenshots(
         viewports: Viewport configurations
         output_dir: Output directory for screenshots
         branch: Branch name (main or pr)
-        
+
     Returns:
         List of dictionaries with screenshot metadata
     """
@@ -49,28 +49,28 @@ async def capture_page_screenshots(
     page_name = page_config["name"]
     page_path = page_config["path"]
     wait_for = page_config.get("wait_for")
-    
+
     # Get viewports for this page
     page_viewports = page_config.get("viewports", ["desktop"])
-    
+
     for viewport_name in page_viewports:
         if viewport_name not in viewports:
             print(f"Warning: Viewport '{viewport_name}' not defined, skipping")
             continue
-            
+
         viewport = viewports[viewport_name]
         url = f"{base_url}{page_path}"
-        
+
         # Create output filename
         filename = f"{page_name}_{viewport_name}_{branch}.png"
         output_path = output_dir / filename
-        
+
         print(f"Capturing {page_name} ({viewport_name}) from {branch}...")
-        
+
         try:
             # Update capture viewport
             capture.viewport = viewport
-            
+
             # Capture screenshot
             await capture.capture_async(
                 url=url,
@@ -78,27 +78,31 @@ async def capture_page_screenshots(
                 full_page=True,
                 wait_for=wait_for,
             )
-            
-            results.append({
-                "page": page_name,
-                "viewport": viewport_name,
-                "branch": branch,
-                "path": str(output_path),
-                "url": url,
-            })
-            
+
+            results.append(
+                {
+                    "page": page_name,
+                    "viewport": viewport_name,
+                    "branch": branch,
+                    "path": str(output_path),
+                    "url": url,
+                }
+            )
+
             print(f"  ✓ Saved to {output_path}")
-            
+
         except Exception as e:
             print(f"  ✗ Error: {e}")
-            results.append({
-                "page": page_name,
-                "viewport": viewport_name,
-                "branch": branch,
-                "error": str(e),
-                "url": url,
-            })
-    
+            results.append(
+                {
+                    "page": page_name,
+                    "viewport": viewport_name,
+                    "branch": branch,
+                    "error": str(e),
+                    "url": url,
+                }
+            )
+
     return results
 
 
@@ -126,40 +130,42 @@ async def main() -> int:
         "--output-dir",
         help="Override output directory from config",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Load configuration
     config_path = Path(args.config)
     if not config_path.exists():
         print(f"Error: Config file not found: {config_path}")
         return 1
-    
-    with open(config_path) as f:
+
+    with config_path.open() as f:
         config = yaml.safe_load(f)
-    
+
     # Get settings
     base_url = args.base_url or config.get("base_url", "http://localhost:5000")
-    output_dir = Path(args.output_dir or config.get("settings", {}).get("output_dir", "visual-tests"))
+    output_dir = Path(
+        args.output_dir or config.get("settings", {}).get("output_dir", "visual-tests")
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     viewports = config.get("viewports", {})
     pages = config.get("pages", [])
     timeout = config.get("settings", {}).get("timeout", 30000)
-    
+
     if not pages:
         print("Error: No pages defined in configuration")
         return 1
-    
+
     print(f"Starting screenshot capture for branch: {args.branch}")
     print(f"Base URL: {base_url}")
     print(f"Output directory: {output_dir}")
     print(f"Pages to capture: {len(pages)}")
     print()
-    
+
     # Create screenshot capture instance
     capture = ScreenshotCapture(timeout=timeout)
-    
+
     # Capture all screenshots
     all_results = []
     for page_config in pages:
@@ -172,21 +178,21 @@ async def main() -> int:
             branch=args.branch,
         )
         all_results.extend(results)
-    
+
     # Save results to JSON
     results_file = output_dir / f"results_{args.branch}.json"
-    with open(results_file, "w") as f:
+    with results_file.open("w") as f:
         json.dump(all_results, f, indent=2)
-    
+
     print()
     print(f"Results saved to: {results_file}")
-    
+
     # Check for errors
     errors = [r for r in all_results if "error" in r]
     if errors:
         print(f"\nWarning: {len(errors)} screenshot(s) failed")
         return 1
-    
+
     print(f"\nSuccess: Captured {len(all_results)} screenshot(s)")
     return 0
 
