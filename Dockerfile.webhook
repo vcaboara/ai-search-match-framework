@@ -14,7 +14,7 @@ COPY pyproject.toml ./
 COPY README.md ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir flask flask-cors httpx requests
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org flask flask-cors httpx requests
 
 # Copy webhook server and review script
 COPY webhook_server.py ./
