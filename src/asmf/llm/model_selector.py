@@ -468,6 +468,7 @@ class ModelSelector:
             List of model names.
         """
         try:
+            # Import httpx here as it's an optional dependency for this feature
             import httpx
             response = httpx.get(
                 f"{os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')}/api/tags",

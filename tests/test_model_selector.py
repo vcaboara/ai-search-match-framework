@@ -253,14 +253,18 @@ class TestModelSelector:
         selector_mid = ModelSelector(vram_gb=8.0)
         selector_high = ModelSelector(vram_gb=16.0)
         
+        # VRAM thresholds with some overhead for system usage
+        LOW_VRAM_MAX_GB = 6.0  # 4GB GPU can handle up to ~6GB with swapping
+        MID_VRAM_MAX_GB = 10.0  # 8GB GPU can handle up to ~10GB with swapping
+        
         for task_type in TaskType:
             # Low VRAM: top model should fit in 4-6GB
             low_rec = selector_low.get_recommendations(task_type)[0]
-            assert low_rec.size_gb <= 6.0
+            assert low_rec.size_gb <= LOW_VRAM_MAX_GB
             
             # Mid VRAM: top model should fit in 8-10GB
             mid_rec = selector_mid.get_recommendations(task_type)[0]
-            assert mid_rec.size_gb <= 10.0
+            assert mid_rec.size_gb <= MID_VRAM_MAX_GB
             
             # High VRAM: can use larger models
             high_rec = selector_high.get_recommendations(task_type)[0]
