@@ -131,3 +131,85 @@ class MyDomainAnalyzer(BaseAnalyzer):
 1. Changes to framework → PR to `main`
 2. Version bump after merge
 3. Dependent projects update their `pyproject.toml` dependency version
+
+## AI Commit Attribution Standards
+
+### When to Use [AI] Prefix
+
+When GitHub Copilot or other AI tools generate commits, use the `[AI]` prefix to track AI contributions:
+
+**Format:**
+```
+[AI] <type>: <description>
+
+---
+AI-Generated-By: GitHub Copilot (Claude Sonnet 4.5)
+```
+
+### When to Apply [AI] Prefix
+
+Use `[AI]` prefix when:
+- AI generated the majority (>50%) of code changes
+- AI wrote the commit message
+- AI suggested the implementation approach
+- You used AI pair programming for the entire feature
+
+Do NOT use `[AI]` when:
+- AI only helped with debugging or understanding existing code
+- You significantly modified AI-generated code
+- AI contributed a minor portion of the changes
+
+### Attribution Footer Format
+
+Always include the attribution footer for AI-generated commits:
+
+```
+---
+AI-Generated-By: <Tool Name> (<Model>)
+```
+
+**Examples:**
+- `AI-Generated-By: GitHub Copilot (Claude Sonnet 4.5)`
+- `AI-Generated-By: GitHub Copilot (GPT-4)`
+- `AI-Generated-By: Cursor (Claude Opus)`
+
+### Complete Examples
+
+```
+[AI] feat(providers): add Azure OpenAI provider
+
+Implement AzureOpenAIProvider class with authentication
+and rate limiting support.
+
+---
+AI-Generated-By: GitHub Copilot (Claude Sonnet 4.5)
+```
+
+```
+[AI] fix(parsers): handle malformed PDF headers
+
+Add validation and error handling for corrupted PDF files.
+
+---
+AI-Generated-By: GitHub Copilot (GPT-4)
+```
+
+### Purpose
+
+We track AI contributions for:
+1. **Accessibility Advocacy**: Demonstrate productivity improvements for developers with accessibility needs
+2. **Productivity Metrics**: Measure AI's impact on development velocity
+
+### Quick Setup
+
+Use the provided git alias for easy AI commits:
+
+```bash
+# Source the alias
+source scripts/git-aliases.sh
+
+# Use it
+git aic "feat(providers): add new provider"
+```
+
+For complete details, see [commit-conventions.md](commit-conventions.md).
