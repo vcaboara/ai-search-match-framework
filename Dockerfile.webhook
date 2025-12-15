@@ -2,26 +2,18 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    git \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Install uv - fast Python package installer
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy requirements files
+# Copy project files
 COPY pyproject.toml ./
 COPY README.md ./
-
-# Install Python dependencies
-RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org flask flask-cors httpx requests
-
-# Copy webhook server and review script
 COPY webhook_server.py ./
 COPY scripts/ollama_pr_review.py ./scripts/
-
-# Copy .github directory for CODE_REVIEW_PATTERNS.md
 COPY .github/ ./.github/
+
+# Install Python dependencies using uv (much faster than pip)
+RUN uv pip install --system --no-cache flask flask-cors httpx requests
 
 # Create necessary directories
 RUN mkdir -p /app/logs
@@ -37,9 +29,9 @@ ENV PYTHONUNBUFFERED=1 \
 # Expose webhook port
 EXPOSE 5000
 
-# Health check
+# Health check using Python (no curl dependency needed)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()" || exit 1
 
 # Run webhook server
 CMD ["python", "webhook_server.py"]
