@@ -26,14 +26,14 @@ class OllamaProvider(BaseAIProvider):
             api_key: Not used for Ollama
             model: Model name (default: qwen2.5-coder:32b)
             base_url: Ollama base URL (default: http://localhost:11434)
-            timeout: Connection timeout in seconds (default: 5.0, configurable via OLLAMA_TIMEOUT env var)
+            timeout: Connection timeout in seconds (default: 300.0, configurable via OLLAMA_TIMEOUT env var)
         """
         super().__init__(api_key=api_key, model=model, base_url=base_url, timeout=timeout)
         self.base_url = base_url or os.getenv(
             "OLLAMA_BASE_URL", "http://localhost:11434"
         )
         self.model = model or "qwen2.5-coder:32b"
-        self.timeout = timeout or float(os.getenv("OLLAMA_TIMEOUT", "5.0"))
+        self.timeout = timeout or float(os.getenv("OLLAMA_TIMEOUT", "300.0"))
         self._available = False
 
         # Test connection
@@ -76,7 +76,7 @@ class OllamaProvider(BaseAIProvider):
                 f"{self.base_url}/api/generate",
                 json={"model": self.model,
                       "prompt": full_prompt, "stream": False},
-                timeout=self.timeout,
+                timeout=httpx.Timeout(self.timeout, read=self.timeout),
             )
             response.raise_for_status()
             return response.json()["response"]
