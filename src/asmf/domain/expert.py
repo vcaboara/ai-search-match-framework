@@ -117,9 +117,9 @@ class DomainExpert:
         text_lower = text.lower()
         for process_type, (min_temp, max_temp) in self.temperature_ranges.items():
             process_name = process_type.replace("_", " ")
-            process_title = process_name.title()
             if process_name in text_lower:
                 if not (min_temp <= temp <= max_temp):
+                    process_title = process_name.title()
                     return (
                         f"{process_title} temperature {temp}°C "
                         f"outside typical range {min_temp}-{max_temp}°C"
