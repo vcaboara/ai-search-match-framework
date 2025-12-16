@@ -10,6 +10,7 @@ and validation rules. Supports any technical domain with configurable:
 """
 
 import logging
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -89,6 +90,7 @@ class DomainConfig:
         """Get domain description."""
         return self.config.get("domain", {}).get("description", "")
 
+    @lru_cache(maxsize=1)
     def get_temperature_ranges(self) -> Dict[str, Tuple[float, float]]:
         """Get temperature ranges for different process types.
         
@@ -113,14 +115,17 @@ class DomainConfig:
                 )
         return valid_ranges
 
+    @lru_cache(maxsize=1)
     def get_equipment_types(self) -> List[str]:
         """Get valid equipment/reactor types."""
         return self.config.get("equipment_types", [])
 
+    @lru_cache(maxsize=1)
     def get_feedstocks(self) -> List[str]:
         """Get known feedstock/input materials."""
         return self.config.get("feedstocks", [])
 
+    @lru_cache(maxsize=1)
     def get_products(self) -> Dict[str, Dict[str, str]]:
         """Get product information with metadata.
         
@@ -129,14 +134,17 @@ class DomainConfig:
         """
         return self.config.get("products", {})
 
+    @lru_cache(maxsize=1)
     def get_product_names(self) -> List[str]:
         """Get list of product names."""
         return list(self.get_products().keys())
 
+    @lru_cache(maxsize=1)
     def get_process_types(self) -> List[str]:
         """Get known process types."""
         return self.config.get("process_types", [])
 
+    @lru_cache(maxsize=1)
     def get_operating_conditions(self) -> Dict[str, Any]:
         """Get operating condition ranges (pressure, residence time, etc.)."""
         return self.config.get("operating_conditions", {})
