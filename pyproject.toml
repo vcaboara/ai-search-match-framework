@@ -76,8 +76,8 @@ addopts = [
     "--cov=webhook_server",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-fail-under=75",
-]
+    "--cov-fail-under=80",
+  ]
 
 [tool.coverage.run]
 source = ["src/asmf", "."]
