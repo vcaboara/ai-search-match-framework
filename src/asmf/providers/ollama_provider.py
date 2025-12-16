@@ -32,7 +32,7 @@ class OllamaProvider(BaseAIProvider):
         self.base_url = base_url or os.getenv(
             "OLLAMA_BASE_URL", "http://localhost:11434"
         )
-        self.model = model or "qwen2.5-coder:32b"
+        self.model = model or os.getenv("OLLAMA_MODEL", "qwen2.5-coder:32b")
         self.timeout = timeout or float(os.getenv("OLLAMA_TIMEOUT", "300.0"))
         self._available = False
 
