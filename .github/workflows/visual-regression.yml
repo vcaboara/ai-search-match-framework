@@ -1,0 +1,244 @@
+name: Visual Regression Testing
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      # Trigger on UI file changes
+      - '**/*.html'
+      - '**/*.css'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.tsx'
+      - '**/*.vue'
+      - 'templates/**/*'
+      - 'static/**/*'
+      # Also trigger on workflow/config changes
+      - '.github/workflows/visual-regression.yml'
+      - 'config/visual-test.yaml'
+      - 'tools/screenshot_utils.py'
+      - 'scripts/take_pr_screenshots.py'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install pyyaml pillow
+      
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+      
+      # Start application server if needed
+      # This step is optional and depends on your application
+      # Uncomment and modify if you have a web server to test
+      # - name: Start application server
+      #   run: |
+      #     # Example: python app.py &
+      #     # Wait for server to be ready
+      #     sleep 5
+      
+      # Capture screenshots from PR branch
+      - name: Capture PR screenshots
+        id: pr_screenshots
+        continue-on-error: true
+        run: |
+          python scripts/take_pr_screenshots.py \
+            --config config/visual-test.yaml \
+            --branch pr
+      
+      # Checkout main branch for comparison
+      - name: Checkout main branch
+        run: |
+          git fetch origin main
+          git checkout origin/main
+      
+      - name: Install dependencies (main branch)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install pyyaml pillow
+      
+      # Capture screenshots from main branch
+      - name: Capture main screenshots
+        id: main_screenshots
+        continue-on-error: true
+        run: |
+          python scripts/take_pr_screenshots.py \
+            --config config/visual-test.yaml \
+            --branch main
+      
+      # Compare screenshots
+      - name: Compare screenshots
+        id: compare
+        continue-on-error: true
+        run: |
+          python - <<'EOF'
+          import json
+          from pathlib import Path
+          
+          # Load results
+          visual_tests_dir = Path("visual-tests")
+          pr_results_file = visual_tests_dir / "results_pr.json"
+          main_results_file = visual_tests_dir / "results_main.json"
+          
+          if not pr_results_file.exists() or not main_results_file.exists():
+              print("Warning: Results files not found")
+              exit(0)
+          
+          with open(pr_results_file) as f:
+              pr_results = json.load(f)
+          
+          with open(main_results_file) as f:
+              main_results = json.load(f)
+          
+          # Create comparison summary
+          comparison = {
+              "total_pages": len(pr_results),
+              "pr_errors": len([r for r in pr_results if "error" in r]),
+              "main_errors": len([r for r in main_results if "error" in r]),
+              "screenshots": []
+          }
+          
+          # Match PR and main screenshots
+          for pr_shot in pr_results:
+              if "error" in pr_shot:
+                  continue
+              
+              page = pr_shot["page"]
+              viewport = pr_shot["viewport"]
+              
+              # Find corresponding main screenshot
+              main_shot = next(
+                  (m for m in main_results 
+                   if m["page"] == page and m["viewport"] == viewport and "error" not in m),
+                  None
+              )
+              
+              if main_shot:
+                  comparison["screenshots"].append({
+                      "page": page,
+                      "viewport": viewport,
+                      "pr_path": pr_shot["path"],
+                      "main_path": main_shot["path"],
+                  })
+          
+          # Save comparison
+          with open(visual_tests_dir / "comparison.json", "w") as f:
+              json.dump(comparison, f, indent=2)
+          
+          print(f"Comparison complete: {len(comparison['screenshots'])} screenshot pairs")
+          EOF
+      
+      # Upload screenshots as artifacts
+      - name: Upload visual test artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-regression-screenshots
+          path: visual-tests/
+          retention-days: 30
+      
+      # Post comment to PR with results
+      - name: Post PR comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const visualTestsDir = 'visual-tests';
+            
+            // Check if comparison file exists
+            const comparisonFile = path.join(visualTestsDir, 'comparison.json');
+            if (!fs.existsSync(comparisonFile)) {
+              console.log('No comparison file found, skipping comment');
+              return;
+            }
+            
+            const comparison = JSON.parse(fs.readFileSync(comparisonFile, 'utf8'));
+            
+            // Build comment
+            let comment = '## 📸 Visual Regression Test Results\n\n';
+            
+            if (comparison.pr_errors > 0 || comparison.main_errors > 0) {
+              comment += '⚠️ **Warning:** Some screenshots failed to capture\n';
+              comment += `- PR branch errors: ${comparison.pr_errors}\n`;
+              comment += `- Main branch errors: ${comparison.main_errors}\n\n`;
+            }
+            
+            comment += `**Total pages tested:** ${comparison.total_pages}\n`;
+            comment += `**Screenshot pairs captured:** ${comparison.screenshots.length}\n\n`;
+            
+            if (comparison.screenshots.length > 0) {
+              comment += '### Screenshots\n\n';
+              comment += 'Download artifacts to view before/after comparisons:\n';
+              comment += `- [Visual Regression Screenshots](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n\n`;
+              
+              comment += '**Pages captured:**\n';
+              const pages = [...new Set(comparison.screenshots.map(s => s.page))];
+              pages.forEach(page => {
+                const viewports = comparison.screenshots
+                  .filter(s => s.page === page)
+                  .map(s => s.viewport)
+                  .join(', ');
+                comment += `- **${page}**: ${viewports}\n`;
+              });
+            } else {
+              comment += '⚠️ No screenshots were successfully captured for comparison.\n';
+            }
+            
+            comment += '\n---\n';
+            comment += '*Note: Visual differences require manual review. Download the artifacts to compare screenshots.*\n';
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Visual Regression Test Results')
+            );
+            
+            // Post or update comment
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment,
+              });
+            }
