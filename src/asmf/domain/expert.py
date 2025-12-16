@@ -62,6 +62,68 @@ class DomainExpert:
         """Get process types from config."""
         return self.config.get_process_types()
 
+    def _extract_temperatures(self, text: str) -> List[int]:
+        """Extract temperature values from text.
+        
+        Args:
+            text: Text to parse
+            
+        Returns:
+            List of temperature values in Celsius
+        """
+        temp_matches = self._TEMP_PATTERN.findall(text)
+        temperatures = []
+        for match in temp_matches:
+            try:
+                temperatures.append(int(match))
+            except ValueError:
+                logger.warning("Failed to parse temperature: %s", match)
+        return temperatures
+
+    def _check_temperature_in_range(self, temp: int) -> Optional[str]:
+        """Check if temperature is within domain range.
+        
+        Args:
+            temp: Temperature in Celsius
+            
+        Returns:
+            Error message if invalid, None if valid
+        """
+        if self.config.validate_temperature(temp):
+            return None
+            
+        ranges = self.temperature_ranges
+        if ranges:
+            all_mins = [r[0] for r in ranges.values()]
+            all_maxs = [r[1] for r in ranges.values()]
+            return (
+                f"Temperature {temp}°C outside typical "
+                f"{self.config.domain_name} range "
+                f"(~{min(all_mins)}-{max(all_maxs)}°C)"
+            )
+        return f"Temperature {temp}°C may be unrealistic"
+
+    def _check_temperature_process_match(self, temp: int, text: str) -> Optional[str]:
+        """Check if temperature matches claimed process type.
+        
+        Args:
+            temp: Temperature in Celsius
+            text: Text containing process mentions
+            
+        Returns:
+            Error message if mismatch, None if valid
+        """
+        text_lower = text.lower()
+        for process_type, (min_temp, max_temp) in self.temperature_ranges.items():
+            process_name = process_type.replace("_", " ")
+            if process_name in text_lower:
+                if not (min_temp <= temp <= max_temp):
+                    return (
+                        f"{process_name.title()} temperature {temp}°C "
+                        f"outside typical range {min_temp}-{max_temp}°C"
+                    )
+        return None
+
     def validate_temperature_claim(self, text: str) -> Dict:
         """Validate temperature claims for technical feasibility.
 
@@ -71,51 +133,22 @@ class DomainExpert:
         Returns:
             Dict with 'valid' (bool) and 'reason' (str) keys
         """
-        # Extract temperature mentions
-        temp_matches = self._TEMP_PATTERN.findall(text)
-        temperatures = []
-        for match in temp_matches:
-            try:
-                temperatures.append(int(match))
-            except ValueError:
-                logger.warning("Failed to parse temperature: %s", match)
-
+        temperatures = self._extract_temperatures(text)
+        
         if not temperatures:
             return {"valid": True, "reason": "No specific temperatures claimed"}
 
-        # Check against config
+        # Validate each temperature
         for temp in temperatures:
-            if not self.config.validate_temperature(temp):
-                ranges = self.temperature_ranges
-                if ranges:
-                    all_mins = [r[0] for r in ranges.values()]
-                    all_maxs = [r[1] for r in ranges.values()]
-                    return {
-                        "valid": False,
-                        "reason": (
-                            f"Temperature {temp}°C outside typical "
-                            f"{self.config.domain_name} range "
-                            f"(~{min(all_mins)}-{max(all_maxs)}°C)"
-                        ),
-                    }
-                else:
-                    return {
-                        "valid": False,
-                        "reason": f"Temperature {temp}°C may be unrealistic",
-                    }
-
-            # Check if temperature matches claimed process type
-            for process_type, (min_temp, max_temp) in self.temperature_ranges.items():
-                process_name = process_type.replace("_", " ")
-                if process_name in text.lower():
-                    if not (min_temp <= temp <= max_temp):
-                        return {
-                            "valid": False,
-                            "reason": (
-                                f"{process_name.title()} temperature {temp}°C "
-                                f"outside typical range {min_temp}-{max_temp}°C"
-                            ),
-                        }
+            # Check against domain range
+            error = self._check_temperature_in_range(temp)
+            if error:
+                return {"valid": False, "reason": error}
+            
+            # Check against process-specific range
+            error = self._check_temperature_process_match(temp, text)
+            if error:
+                return {"valid": False, "reason": error}
 
         return {"valid": True, "reason": "Temperature claims are reasonable"}
 
