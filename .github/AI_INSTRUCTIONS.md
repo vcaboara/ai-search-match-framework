@@ -9,7 +9,7 @@ Copy to your AI assistant configuration directory (`.cursor/rules/`, `.clinerule
 - Check ALL command exit codes (0 = success, non-zero = failure)
 - Read COMPLETE stdout AND stderr output
 - Report errors immediately with exact error text
-- Use files for multi-line content (PR bodies, commit messages)
+- **Use temporary files for large messages** (PR bodies >100 chars, multi-line commits)
 - Verify tests pass before claiming success
 - Add AI attribution to commits: `[AI]` prefix + attribution footer
 
@@ -40,6 +40,39 @@ Before claiming "done":
 3. ✅ Tests pass
 4. ✅ Files exist where expected
 5. ✅ Changes committed if needed
+
+## Using Files for Messages
+
+To avoid token waste and formatting issues, use temporary files for:
+- PR descriptions >100 characters
+- Multi-line commit messages
+- Complex command input
+
+**Example:**
+```powershell
+# PR creation
+@'
+Short description
+
+Changes:
+- Point 1
+- Point 2
+'@ | Out-File -FilePath pr-body.txt -Encoding utf8
+gh pr create --title "Title" --body-file pr-body.txt
+rm pr-body.txt
+
+# Commit messages
+@'
+feat: add new feature
+
+Detailed explanation
+
+---
+AI-Generated-By: GitHub Copilot (Claude Sonnet 4.5)
+'@ | Out-File -FilePath commit-msg.txt -Encoding utf8
+git commit -F commit-msg.txt
+rm commit-msg.txt
+```
 
 ## Command Verification
 
