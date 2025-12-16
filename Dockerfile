@@ -25,5 +25,8 @@ RUN if [ "$INSTALL_TEST_DEPS" = "true" ]; then \
         uv pip install --system -e .; \
     fi
 
+# Set PYTHONPATH to make tools and webhook_server importable
+ENV PYTHONPATH="/workspace:${PYTHONPATH}"
+
 # Default command
 CMD ["python", "-c", "import asmf; print('ASMF framework loaded successfully')"]
