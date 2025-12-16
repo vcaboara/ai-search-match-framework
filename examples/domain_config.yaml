@@ -1,0 +1,57 @@
+# Example Domain Configuration
+# Copy to config/domain.yaml and customize for your technical domain
+
+domain:
+  name: "thermal_processing"
+  description: "Thermal decomposition and energy conversion systems"
+
+# Temperature ranges for different process types (Celsius)
+temperature_ranges:
+  low_temperature: [200, 400]
+  medium_temperature: [400, 600]
+  high_temperature: [600, 900]
+  extreme_temperature: [900, 1200]
+
+# Equipment/reactor types
+equipment_types:
+  - fixed_bed_reactor
+  - fluidized_bed
+  - rotary_kiln
+  - microwave_reactor
+  - plasma_reactor
+
+# Input materials/feedstocks
+feedstocks:
+  - biomass
+  - agricultural_waste
+  - plastic_waste
+  - tire_rubber
+  - municipal_solid_waste
+
+# Output products with metadata
+products:
+  bio_oil:
+    description: "Liquid fuel from thermal decomposition"
+    typical_yield: "40-60%"
+  syngas:
+    description: "Synthesis gas (CO + H2)"
+    typical_yield: "20-30%"
+  biochar:
+    description: "Solid carbon residue"
+    typical_yield: "15-25%"
+
+# Process types
+process_types:
+  - pyrolysis
+  - gasification
+  - combustion
+  - torrefaction
+
+# Operating conditions
+operating_conditions:
+  pressure:
+    min: 0.1  # bar
+    max: 50.0
+  residence_time:
+    min: 0.1  # seconds
+    max: 3600

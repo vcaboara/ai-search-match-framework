@@ -1,6 +1,6 @@
 """AI Search Match Framework - Reusable AI-powered analysis components."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .providers import (
     BaseAIProvider,
@@ -12,6 +12,11 @@ from .parsers import (
     PDFPatentParser,
     PatentClaim,
     PatentDocument,
+)
+from .domain import (
+    DomainConfig,
+    DomainExpert,
+    get_domain_config,
 )
 
 __all__ = [
@@ -26,4 +31,8 @@ __all__ = [
     "PDFPatentParser",
     "PatentClaim",
     "PatentDocument",
+    # Domain System (NEW in v0.2.0)
+    "DomainConfig",
+    "DomainExpert",
+    "get_domain_config",
 ]
