@@ -1,0 +1,25 @@
+﻿# CODEOWNERS
+# These owners will be the default owners for everything in the repo.
+# They will be requested for review when someone opens a pull request.
+
+# Default owner for everything
+* @vcaboara
+
+# GitHub workflows and configurations
+/.github/ @vcaboara
+
+# Source code
+/src/ @vcaboara
+/asmf/ @vcaboara
+
+# Tests
+/tests/ @vcaboara
+
+# Documentation
+/docs/ @vcaboara
+*.md @vcaboara
+
+# Configuration files
+*.yaml @vcaboara
+*.yml @vcaboara
+*.toml @vcaboara
