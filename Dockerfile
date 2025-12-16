@@ -10,6 +10,7 @@ COPY pyproject.toml ./
 COPY README.md ./
 COPY src/ ./src/
 COPY tests/ ./tests/
+COPY webhook_server.py ./
 
 # Install Python dependencies with uv
 ARG INSTALL_TEST_DEPS=false
@@ -18,6 +19,9 @@ RUN if [ "$INSTALL_TEST_DEPS" = "true" ]; then \
     else \
         uv pip install --system -e .; \
     fi
+
+# Set PYTHONPATH to make tools and webhook_server importable
+ENV PYTHONPATH="/workspace:${PYTHONPATH}"
 
 # Default command
 CMD ["python", "-c", "import asmf; print('ASMF framework loaded successfully')"]
