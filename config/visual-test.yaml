@@ -1,0 +1,66 @@
+# Visual Regression Testing Configuration
+# This file defines pages/routes to screenshot for visual regression testing
+
+# Base URL for the application (can be overridden by environment variable)
+base_url: "http://localhost:5000"
+
+# Viewport configurations for different screen sizes
+viewports:
+  desktop:
+    width: 1920
+    height: 1080
+  tablet:
+    width: 768
+    height: 1024
+  mobile:
+    width: 375
+    height: 667
+
+# Pages to screenshot
+pages:
+  - name: "home"
+    path: "/"
+    viewports: ["desktop", "tablet", "mobile"]
+    wait_for: null  # Optional CSS selector to wait for
+    
+  - name: "dashboard"
+    path: "/dashboard"
+    viewports: ["desktop", "tablet"]
+    wait_for: ".dashboard-container"
+    
+  - name: "analysis"
+    path: "/analysis"
+    viewports: ["desktop"]
+    wait_for: ".analysis-results"
+
+# Screenshot settings
+settings:
+  # Timeout for page load in milliseconds
+  timeout: 30000
+  
+  # Whether to capture full page or just viewport
+  full_page: true
+  
+  # Pixel difference threshold for visual diff (percentage)
+  # 0.0 = exact match, 1.0 = 1% difference allowed
+  diff_threshold: 0.01
+  
+  # Output directory for screenshots (relative to project root)
+  output_dir: "visual-tests"
+  
+  # Whether to save diff images
+  save_diff: true
+  
+  # Image format (png or jpeg)
+  format: "png"
+
+# Patterns to ignore when detecting UI file changes
+ui_file_patterns:
+  - "**/*.html"
+  - "**/*.css"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.tsx"
+  - "**/*.vue"
+  - "templates/**/*"
+  - "static/**/*"
