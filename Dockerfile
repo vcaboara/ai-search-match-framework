@@ -20,9 +20,9 @@ ENV PYTHONPATH="/workspace:${PYTHONPATH}"
 # Install Python dependencies with uv
 ARG INSTALL_TEST_DEPS=false
 RUN if [ "$INSTALL_TEST_DEPS" = "true" ]; then \
-        uv pip install --system -e ".[dev]" pytest-xdist; \
+    uv pip install --system -e ".[dev]" pytest-xdist; \
     else \
-        uv pip install --system -e .; \
+    uv pip install --system -e .; \
     fi
 
 # Set PYTHONPATH to make tools and webhook_server importable

@@ -124,7 +124,8 @@ class DomainConfig:
     def get_equipment_types(self) -> List[str]:
         """Get valid equipment/reactor types."""
         if not hasattr(self, '_equipment_types_cache'):
-            self._equipment_types_cache = self.config.get("equipment_types", [])
+            self._equipment_types_cache = self.config.get(
+                "equipment_types", [])
         return self._equipment_types_cache
 
     def get_feedstocks(self) -> List[str]:
@@ -158,7 +159,8 @@ class DomainConfig:
     def get_operating_conditions(self) -> Dict[str, Any]:
         """Get operating condition ranges (pressure, residence time, etc.)."""
         if not hasattr(self, '_operating_conditions_cache'):
-            self._operating_conditions_cache = self.config.get("operating_conditions", {})
+            self._operating_conditions_cache = self.config.get(
+                "operating_conditions", {})
         return self._operating_conditions_cache
 
     def validate_temperature(self, temp_celsius: float) -> bool:

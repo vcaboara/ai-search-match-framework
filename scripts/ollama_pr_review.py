@@ -139,6 +139,12 @@ def format_review_prompt(pr_diff: str, pr_files: list[dict[str, Any]], review_pa
 
     prompt = f"""You are an expert code reviewer analyzing a GitHub pull request. Your task is to identify code quality issues, performance problems, and security vulnerabilities based on established anti-patterns.
 
+## Communication Style
+- Be concise and direct. Optimize for token efficiency and human readability.
+- Keep responses brief - focus on actionable issues only.
+- Avoid verbose explanations or unnecessary framing.
+- Target 1-2 sentences per issue when possible.
+
 ## Review Guidelines
 
 {review_patterns if review_patterns else "Review the code for common Python anti-patterns, performance issues, and security vulnerabilities."}

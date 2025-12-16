@@ -61,6 +61,12 @@ def review_pr(repo_name: str, pr_number: int) -> str:
 - Added middleware and services layers
 - Updated tests for new architecture
 
+**Communication Style**:
+- Be concise and direct. Optimize for token efficiency and human readability.
+- Keep responses brief - focus on critical architectural issues only.
+- Avoid verbose explanations. Target 1-2 sentences per point when possible.
+- Skip unnecessary framing phrases.
+
 **Review Focus**:
 1. **Architecture**: Is the blueprint organization logical and maintainable?
 2. **Code Quality**: Any anti-patterns or code smells?
