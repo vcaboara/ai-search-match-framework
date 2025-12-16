@@ -76,7 +76,7 @@ class OllamaProvider(BaseAIProvider):
                 f"{self.base_url}/api/generate",
                 json={"model": self.model,
                       "prompt": full_prompt, "stream": False},
-                timeout=120.0,
+                timeout=self.timeout,
             )
             response.raise_for_status()
             return response.json()["response"]
