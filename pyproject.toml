@@ -1,6 +1,6 @@
 [project]
 name = "ai-search-match-framework"
-version = "0.2.0"
+version = "0.3.0"
 description = "Lightweight framework for AI-powered document analysis and search workflows with multi-provider support"
 authors = [
     {name = "Vincent Caboara", email = "vcaboara@gmail.com"}

@@ -1,6 +1,6 @@
 """AI Search Match Framework - Reusable AI-powered analysis components."""
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from .providers import (
     BaseAIProvider,
