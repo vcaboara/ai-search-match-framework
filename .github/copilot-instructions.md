@@ -146,6 +146,49 @@ When GitHub Copilot or other AI tools generate commits, use the `[AI]` prefix to
 AI-Generated-By: GitHub Copilot (Claude Sonnet 4.5)
 ```
 
+### Use Files for Large Messages
+
+For token efficiency and to avoid formatting issues, use temporary files for:
+- PR descriptions with multiple sections or >100 characters
+- Multi-line commit messages with detailed explanations
+- Any message that includes code blocks or complex formatting
+
+**PowerShell Example:**
+```powershell
+# Create commit message in file
+@'
+[AI] feat: add comprehensive feature
+
+Implemented:
+- Feature A
+- Feature B
+
+Tested with unit tests.
+
+---
+AI-Generated-By: GitHub Copilot (Claude Sonnet 4.5)
+'@ | Out-File -FilePath commit-msg.txt -Encoding utf8
+git commit -F commit-msg.txt
+rm commit-msg.txt
+
+# Create PR with file-based body
+@'
+## Changes
+- Fix X
+- Add Y
+
+## Testing
+All tests pass
+'@ | Out-File -FilePath pr-body.txt -Encoding utf8
+gh pr create --title "fix: description" --body-file pr-body.txt
+rm pr-body.txt
+```
+
+**Benefits:**
+- Avoids wasting tokens on debugging escape sequences
+- Easier to edit and review before submission
+- Cleaner command history
+
 ### When to Apply [AI] Prefix
 
 Use `[AI]` prefix when:
