@@ -20,7 +20,7 @@ class DomainExpert:
     Provides technical validation based on domain configuration.
     All domain knowledge (temperature ranges, equipment, processes, etc.)
     is loaded from YAML configuration file.
-    
+
     Example usage:
         expert = DomainExpert()
         result = expert.validate_temperature_claim("heating to 500°C")
@@ -38,7 +38,7 @@ class DomainExpert:
         logger.info("Initialized %s domain expert", self.config.domain_name)
 
     @property
-    def temperature_ranges(self) -> Dict[str, tuple]:
+    def temperature_ranges(self) -> Dict[str, tuple[float, float]]:
         """Get temperature ranges from config."""
         return self.config.get_temperature_ranges()
 
@@ -53,7 +53,7 @@ class DomainExpert:
         return self.config.get_feedstocks()
 
     @property
-    def products(self) -> Dict[str, Dict]:
+    def products(self) -> Dict[str, Dict[str, str]]:
         """Get products from config."""
         return self.config.get_products()
 
@@ -64,10 +64,10 @@ class DomainExpert:
 
     def _extract_temperatures(self, text: str) -> List[int]:
         """Extract temperature values from text.
-        
+
         Args:
             text: Text to parse
-            
+
         Returns:
             List of temperature values in Celsius
         """
@@ -82,20 +82,21 @@ class DomainExpert:
 
     def _check_temperature_in_range(self, temp: int) -> Optional[str]:
         """Check if temperature is within domain range.
-        
+
         Args:
             temp: Temperature in Celsius
-            
+
         Returns:
             Error message if invalid, None if valid
         """
         if self.config.validate_temperature(temp):
             return None
-            
+
         ranges = self.temperature_ranges
         if ranges:
-            all_mins = [r[0] for r in ranges.values()]
-            all_maxs = [r[1] for r in ranges.values()]
+            range_values = ranges.values()
+            all_mins = [r[0] for r in range_values]
+            all_maxs = [r[1] for r in range_values]
             return (
                 f"Temperature {temp}°C outside typical "
                 f"{self.config.domain_name} range "
@@ -105,21 +106,22 @@ class DomainExpert:
 
     def _check_temperature_process_match(self, temp: int, text: str) -> Optional[str]:
         """Check if temperature matches claimed process type.
-        
+
         Args:
             temp: Temperature in Celsius
             text: Text containing process mentions
-            
+
         Returns:
             Error message if mismatch, None if valid
         """
         text_lower = text.lower()
         for process_type, (min_temp, max_temp) in self.temperature_ranges.items():
             process_name = process_type.replace("_", " ")
+            process_title = process_name.title()
             if process_name in text_lower:
                 if not (min_temp <= temp <= max_temp):
                     return (
-                        f"{process_name.title()} temperature {temp}°C "
+                        f"{process_title} temperature {temp}°C "
                         f"outside typical range {min_temp}-{max_temp}°C"
                     )
         return None
@@ -134,7 +136,7 @@ class DomainExpert:
             Dict with 'valid' (bool) and 'reason' (str) keys
         """
         temperatures = self._extract_temperatures(text)
-        
+
         if not temperatures:
             return {"valid": True, "reason": "No specific temperatures claimed"}
 
@@ -144,7 +146,7 @@ class DomainExpert:
             error = self._check_temperature_in_range(temp)
             if error:
                 return {"valid": False, "reason": error}
-            
+
             # Check against process-specific range
             error = self._check_temperature_process_match(temp, text)
             if error:

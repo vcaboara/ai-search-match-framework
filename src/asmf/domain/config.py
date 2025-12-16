@@ -10,7 +10,6 @@ and validation rules. Supports any technical domain with configurable:
 """
 
 import logging
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -21,20 +20,20 @@ logger = logging.getLogger(__name__)
 
 class DomainConfig:
     """Load and manage domain-specific expertise configuration.
-    
+
     Example YAML structure:
         domain:
           name: "thermal_processing"
           description: "Thermal decomposition and energy conversion"
-        
+
         temperature_ranges:
           low_temp: [200, 400]
           high_temp: [600, 900]
-        
+
         equipment_types:
           - fixed_bed_reactor
           - fluidized_bed
-        
+
         process_types:
           - pyrolysis
           - gasification
@@ -47,7 +46,8 @@ class DomainConfig:
             config_path: Path to domain config YAML file. Defaults to config/domain.yaml
         """
         if config_path is None:
-            config_path = Path(__file__).parent.parent.parent / "config" / "domain.yaml"
+            config_path = Path(__file__).parent.parent.parent / \
+                "config" / "domain.yaml"
 
         self.config_path = config_path
         self.config: Dict[str, Any] = {}
@@ -56,7 +56,8 @@ class DomainConfig:
     def _load_config(self) -> None:
         """Load configuration from YAML file."""
         if not self.config_path.exists():
-            logger.warning("Domain config not found at %s, using default config", self.config_path)
+            logger.warning(
+                "Domain config not found at %s, using default config", self.config_path)
             self.config = self._get_default_config()
             return
 
@@ -90,13 +91,18 @@ class DomainConfig:
         """Get domain description."""
         return self.config.get("domain", {}).get("description", "")
 
-    @lru_cache(maxsize=1)
     def get_temperature_ranges(self) -> Dict[str, Tuple[float, float]]:
         """Get temperature ranges for different process types.
-        
+
         Returns:
             Dict mapping process type to (min_temp, max_temp) tuple in Celsius
         """
+        if not hasattr(self, '_temperature_ranges_cache'):
+            self._temperature_ranges_cache = self._compute_temperature_ranges()
+        return self._temperature_ranges_cache
+
+    def _compute_temperature_ranges(self) -> Dict[str, Tuple[float, float]]:
+        """Compute temperature ranges from config."""
         ranges = self.config.get("temperature_ranges", {})
         valid_ranges = {}
         for k, v in ranges.items():
@@ -115,39 +121,45 @@ class DomainConfig:
                 )
         return valid_ranges
 
-    @lru_cache(maxsize=1)
     def get_equipment_types(self) -> List[str]:
         """Get valid equipment/reactor types."""
-        return self.config.get("equipment_types", [])
+        if not hasattr(self, '_equipment_types_cache'):
+            self._equipment_types_cache = self.config.get("equipment_types", [])
+        return self._equipment_types_cache
 
-    @lru_cache(maxsize=1)
     def get_feedstocks(self) -> List[str]:
         """Get known feedstock/input materials."""
-        return self.config.get("feedstocks", [])
+        if not hasattr(self, '_feedstocks_cache'):
+            self._feedstocks_cache = self.config.get("feedstocks", [])
+        return self._feedstocks_cache
 
-    @lru_cache(maxsize=1)
     def get_products(self) -> Dict[str, Dict[str, str]]:
         """Get product information with metadata.
-        
+
         Returns:
             Dict mapping product name to metadata dict (description, yield, etc.)
         """
-        return self.config.get("products", {})
+        if not hasattr(self, '_products_cache'):
+            self._products_cache = self.config.get("products", {})
+        return self._products_cache
 
-    @lru_cache(maxsize=1)
     def get_product_names(self) -> List[str]:
         """Get list of product names."""
-        return list(self.get_products().keys())
+        if not hasattr(self, '_product_names_cache'):
+            self._product_names_cache = list(self.get_products().keys())
+        return self._product_names_cache
 
-    @lru_cache(maxsize=1)
     def get_process_types(self) -> List[str]:
         """Get known process types."""
-        return self.config.get("process_types", [])
+        if not hasattr(self, '_process_types_cache'):
+            self._process_types_cache = self.config.get("process_types", [])
+        return self._process_types_cache
 
-    @lru_cache(maxsize=1)
     def get_operating_conditions(self) -> Dict[str, Any]:
         """Get operating condition ranges (pressure, residence time, etc.)."""
-        return self.config.get("operating_conditions", {})
+        if not hasattr(self, '_operating_conditions_cache'):
+            self._operating_conditions_cache = self.config.get("operating_conditions", {})
+        return self._operating_conditions_cache
 
     def validate_temperature(self, temp_celsius: float) -> bool:
         """Check if temperature is within reasonable range for this domain.
