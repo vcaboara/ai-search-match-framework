@@ -36,7 +36,8 @@ Write-Host "Repository: $repo" -ForegroundColor Yellow
 # Apply branch protection
 Write-Host "`nApplying branch protection rules to main branch..." -ForegroundColor Cyan
 
-$configPath = Join-Path $PSScriptRoot ".." ".github" "branch-protection.json"
+# Build config path properly for PowerShell 5.1
+$configPath = Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) ".github") "branch-protection.json"
 if (-not (Test-Path $configPath)) {
     Write-Error "Branch protection config not found at: $configPath"
     exit 1
