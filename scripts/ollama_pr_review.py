@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 # Configuration
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:14b-q4")
-OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "120.0"))
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "deepseek-coder:6.7b")
+OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "300.0"))
 
 
 # Load CODE_REVIEW_PATTERNS.md content
