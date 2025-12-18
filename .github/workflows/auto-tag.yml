@@ -17,68 +17,31 @@ jobs:
                   fetch-depth: 0
                   token: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Get latest tag
-              id: get_tag
+            - name: Get version from pyproject.toml
+              id: get_version
               run: |
-                  # Get the latest tag, default to v0.0.0 if none exists
-                  LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-                  echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-
-                  # Extract version numbers
-                  VERSION=${LATEST_TAG#v}
-                  MAJOR=$(echo $VERSION | cut -d. -f1)
-                  MINOR=$(echo $VERSION | cut -d. -f2)
-                  PATCH=$(echo $VERSION | cut -d. -f3)
-
-                  echo "major=$MAJOR" >> $GITHUB_OUTPUT
-                  echo "minor=$MINOR" >> $GITHUB_OUTPUT
-                  echo "patch=$PATCH" >> $GITHUB_OUTPUT
-
-            - name: Determine version bump
-              id: bump
-              run: |
-                  # Check commit messages for version bump indicators
-                  COMMIT_MSG=$(git log -1 --pretty=%B)
-
-                  # Look for breaking changes or major keywords
-                  if echo "$COMMIT_MSG" | grep -qiE '(BREAKING CHANGE|major:|\[major\])'; then
-                    BUMP_TYPE="major"
-                  # Look for feature keywords
-                  elif echo "$COMMIT_MSG" | grep -qiE '(feat:|feature:|minor:|\[minor\]|\[feature\])'; then
-                    BUMP_TYPE="minor"
-                  # Default to patch
-                  else
-                    BUMP_TYPE="patch"
-                  fi
-
-                  echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
-
-            - name: Calculate new version
-              id: new_version
-              run: |
-                  MAJOR=${{ steps.get_tag.outputs.major }}
-                  MINOR=${{ steps.get_tag.outputs.minor }}
-                  PATCH=${{ steps.get_tag.outputs.patch }}
-                  BUMP=${{ steps.bump.outputs.bump_type }}
-
-                  if [ "$BUMP" = "major" ]; then
-                    MAJOR=$((MAJOR + 1))
-                    MINOR=0
-                    PATCH=0
-                  elif [ "$BUMP" = "minor" ]; then
-                    MINOR=$((MINOR + 1))
-                    PATCH=0
-                  else
-                    PATCH=$((PATCH + 1))
-                  fi
-
-                  NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+                  # Extract version from pyproject.toml
+                  VERSION=$(grep "^version" pyproject.toml | head -1 | cut -d'"' -f2)
+                  NEW_VERSION="v${VERSION}"
                   echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-                  echo "New version will be: $NEW_VERSION (bump: $BUMP)"
+                  echo "Version from pyproject.toml: $NEW_VERSION"
+
+            - name: Check if tag already exists
+              id: check_tag
+              run: |
+                  NEW_VERSION=${{ steps.get_version.outputs.version }}
+                  if git rev-parse "$NEW_VERSION" >/dev/null 2>&1; then
+                    echo "exists=true" >> $GITHUB_OUTPUT
+                    echo "⚠️ Tag $NEW_VERSION already exists, skipping release"
+                  else
+                    echo "exists=false" >> $GITHUB_OUTPUT
+                    echo "✅ Tag $NEW_VERSION does not exist, will create"
+                  fi
 
             - name: Create and push tag
+              if: steps.check_tag.outputs.exists == 'false'
               run: |
-                  NEW_VERSION=${{ steps.new_version.outputs.version }}
+                  NEW_VERSION=${{ steps.get_version.outputs.version }}
                   COMMIT_MSG=$(git log -1 --pretty=%B)
 
                   git config user.name "github-actions[bot]"
@@ -90,9 +53,10 @@ jobs:
                   echo "✅ Created and pushed tag: $NEW_VERSION"
 
             - name: Create GitHub Release
+              if: steps.check_tag.outputs.exists == 'false'
               env:
                   GH_TOKEN: ${{ github.token }}
               run: |
-                  gh release create "${{ steps.new_version.outputs.version }}" \
-                    --title "Release ${{ steps.new_version.outputs.version }}" \
+                  gh release create "${{ steps.get_version.outputs.version }}" \
+                    --title "Release ${{ steps.get_version.outputs.version }}" \
                     --generate-notes

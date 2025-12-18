@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-12-18
+
+### Added
+- Automated PyPI publishing via GitHub Actions
+- Version synchronization between pyproject.toml and git tags
+- Enhanced auto-tag workflow to read version from pyproject.toml
+
+### Changed
+- Publishing process now fully automated on merge to main
+- No manual tagging required for releases
+
 ## [0.2.0] - 2025-12-14
 
 ### Added
