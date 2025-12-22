@@ -37,7 +37,7 @@ jobs:
 
       - name: Parse task from issue
         id: parse-task
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -267,7 +267,7 @@ jobs:
 
       - name: Create pull request
         if: success()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -315,7 +315,7 @@ jobs:
 
       - name: Report failure
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
