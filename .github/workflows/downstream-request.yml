@@ -15,7 +15,7 @@ jobs:
     
     steps:
       - name: Add priority triage comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const issue = context.payload.issue;
@@ -62,7 +62,7 @@ jobs:
             });
 
       - name: Link to downstream project
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         if: contains(github.event.issue.body, 'Repository:')
         with:
           script: |
